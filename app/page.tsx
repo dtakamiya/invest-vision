@@ -212,6 +212,14 @@ export default function Home() {
               <p className="text-3xl font-bold text-purple-600">
                 {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().total)}
               </p>
+              <p className="text-xs text-gray-500 mt-1">
+                <span className="inline-flex items-center text-green-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                  </svg>
+                  10分ごとに自動更新
+                </span>
+              </p>
               <div className="mt-4">
                 <Link
                   href="/stocks"
@@ -230,6 +238,14 @@ export default function Home() {
               <h3 className="text-lg font-medium text-gray-500 mb-2">日本株評価額</h3>
               <p className="text-3xl font-bold text-red-600">
                 {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().japanTotal)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                <span className="inline-flex items-center text-green-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                  </svg>
+                  株価は10分ごとに自動更新
+                </span>
               </p>
               <div className="mt-4">
                 <Link
@@ -255,6 +271,13 @@ export default function Home() {
                   為替レート: {exchangeRate.rate.toFixed(2)}円/$
                   <br />
                   更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP')}
+                  <br />
+                  <span className="inline-flex items-center text-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                    株価・為替レートは10分ごとに自動更新
+                  </span>
                 </p>
               )}
               <div className="mt-4">

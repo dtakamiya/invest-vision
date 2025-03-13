@@ -163,6 +163,14 @@ export default function StocksPage() {
             </Link>
           </div>
         </div>
+        <div className="mt-4 text-white text-sm bg-indigo-500 bg-opacity-30 rounded-lg p-3">
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            株価情報と為替レートは10分ごとに自動更新されます。手動で更新する場合は「株価を更新」ボタンをクリックしてください。
+          </div>
+        </div>
       </div>
 
       {stocks.length === 0 ? (
@@ -282,6 +290,11 @@ export default function StocksPage() {
                             </div>
                             <div className="text-xs text-gray-500">
                               更新: {stockPrice.lastUpdated.toLocaleString('ja-JP')}
+                              <span className="ml-1 text-green-600 inline-flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                </svg>
+                              </span>
                             </div>
                           </div>
                         ) : priceLoading ? (
@@ -308,7 +321,14 @@ export default function StocksPage() {
                             {stockPrice.currency === 'USD' && (
                               <div className="text-xs text-gray-500">
                                 （為替レート: {exchangeRate.rate.toFixed(2)}円/$）
-                                <div>更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP')}</div>
+                                <div>
+                                  更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP')}
+                                  <span className="ml-1 text-green-600 inline-flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                    </svg>
+                                  </span>
+                                </div>
                               </div>
                             )}
                           </div>
