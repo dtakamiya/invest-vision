@@ -162,7 +162,10 @@ export default function Home() {
       }
     };
 
-    // 初回実行は不要（上のuseEffectで取得済み）
+    // 初回ロード時にも更新を実行
+    updatePrices();
+    
+    // 更新間隔を10分に戻す
     const interval = setInterval(updatePrices, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
