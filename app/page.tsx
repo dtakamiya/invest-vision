@@ -246,6 +246,12 @@ export default function Home() {
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalDividends)}
                 </div>
                 <div className="text-amber-600 font-medium">配当金合計</div>
+                {totalInvestment > 0 && (
+                  <div className="text-xs text-amber-800 mt-1 flex items-center">
+                    <span className="font-semibold">利回り: {((totalDividends / totalInvestment) * 100).toFixed(2)}%</span>
+                    <span className="ml-1">（配当金÷投資総額）</span>
+                  </div>
+                )}
               </div>
             </div>
 
