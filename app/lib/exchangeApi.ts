@@ -11,9 +11,15 @@ export async function fetchUSDJPYRate(): Promise<ExchangeRate> {
       cache: 'no-store',
       headers: {
         'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
       }
     });
+    
+    if (!response.ok) {
+      throw new Error(`為替レートの取得に失敗しました: ${response.status} ${response.statusText}`);
+    }
+    
     const data = await response.json();
     
     return {

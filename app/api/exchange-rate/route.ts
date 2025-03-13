@@ -3,13 +3,27 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const response = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDJPY=X', {
-      cache: 'no-store'
+      cache: 'no-store',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
+      }
     });
+    
+    if (!response.ok) {
+      throw new Error(`為替レートの取得に失敗しました: ${response.status} ${response.statusText}`);
+    }
+    
     const data = await response.json();
 
     if (!data.chart?.result?.[0]?.meta?.regularMarketPrice) {
-      throw new Error('為替レートの取得に失敗しました');
+      throw new Error('為替レートのデータが見つかりませんでした');
     }
+
+    // レスポンスをコンソールに出力（デバッグ用）
+    console.log('Yahoo Finance APIレスポンス:', JSON.stringify({
+      rate: data.chart.result[0].meta.regularMarketPrice,
+      timestamp: new Date().toISOString()
+    }));
 
     const res = NextResponse.json({
       rate: data.chart.result[0].meta.regularMarketPrice,
