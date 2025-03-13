@@ -11,20 +11,21 @@ import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
 function calculateValue(
   stock: Stock,
   stockPrice: StockPrice | undefined,
-  exchangeRate: { rate: number; lastUpdated: Date }
+  exchangeRate: { rate: number; lastUpdated: Date },
+  quantity: number
 ): { value: number | null; currency: string } {
-  if (!stockPrice || !stock.initialQuantity) return { value: null, currency: '円' };
+  if (!stockPrice || quantity === 0) return { value: null, currency: '円' };
   
   // USDの場合、為替レートを適用
   if (stockPrice.currency === 'USD') {
     return {
-      value: Math.round(stockPrice.price * stock.initialQuantity * exchangeRate.rate),
+      value: Math.round(stockPrice.price * quantity * exchangeRate.rate),
       currency: '円'
     };
   }
   
   return {
-    value: Math.round(stockPrice.price * stock.initialQuantity),
+    value: Math.round(stockPrice.price * quantity),
     currency: '円'
   };
 }
@@ -296,9 +297,14 @@ export default function StocksPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {stockPrice && stock.initialQuantity ? (
+                        {stockPrice ? (
                           <div className="font-bold text-gray-800">
-                            {calculateValue(stock, stockPrice, exchangeRate).value?.toLocaleString()} 円
+                            {calculateValue(
+                              stock, 
+                              stockPrice, 
+                              exchangeRate, 
+                              stockQuantities.get(stock.id) || 0
+                            ).value?.toLocaleString()} 円
                             {stockPrice.currency === 'USD' && (
                               <div className="text-xs text-gray-500">
                                 （為替レート: {exchangeRate.rate.toFixed(2)}円/$）
