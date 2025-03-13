@@ -181,11 +181,11 @@ export default function Home() {
               C101.5,290,177,306.2,248.9,274.3z" fill="rgba(255,255,255,0.4)"/>
           </svg>
         </div>
-        <div className="relative z-10 px-6 py-16 sm:px-12 sm:py-24 text-center">
+        <div className="relative z-10 px-6 py-12 sm:px-12 sm:py-16 text-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight animate-fadeIn">
             投資ビジョン
           </h1>
-          <p className="text-xl md:text-2xl text-indigo-100 mb-10 max-w-3xl mx-auto animate-fadeIn animation-delay-300">
+          <p className="text-xl md:text-2xl text-indigo-100 mb-8 max-w-3xl mx-auto animate-fadeIn animation-delay-300">
             配当金の受け取りと株式購入を簡単に記録・管理できる
             <br className="hidden sm:inline" />
             モダンなアプリケーション
@@ -211,218 +211,201 @@ export default function Home() {
               新しい銘柄を追加
             </Link>
           </div>
-          
-          {/* 概要カード */}
-          {!loading && (
-            <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-              <div className="bg-white bg-opacity-10 backdrop-blur-sm p-4 rounded-xl border border-white border-opacity-20 hover:bg-opacity-20 transition-all">
-                <div className="text-2xl font-bold">{stocks.length}</div>
-                <div className="text-indigo-100">登録銘柄数</div>
-              </div>
-              <div className="bg-white bg-opacity-10 backdrop-blur-sm p-4 rounded-xl border border-white border-opacity-20 hover:bg-opacity-20 transition-all">
-                <div className="text-2xl font-bold">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(calculateTotalValueByCountry().total)}
-                </div>
-                <div className="text-indigo-100">評価額合計</div>
-              </div>
-              <div className="bg-white bg-opacity-10 backdrop-blur-sm p-4 rounded-xl border border-white border-opacity-20 hover:bg-opacity-20 transition-all">
-                <div className="text-2xl font-bold">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalInvestment)}
-                </div>
-                <div className="text-indigo-100">投資総額</div>
-              </div>
-              <div className="bg-white bg-opacity-10 backdrop-blur-sm p-4 rounded-xl border border-white border-opacity-20 hover:bg-opacity-20 transition-all">
-                <div className="text-2xl font-bold">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalDividends)}
-                </div>
-                <div className="text-indigo-100">配当金合計</div>
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
-      {/* 評価額とリバランスセクション */}
+      {/* ポートフォリオ概要セクション - 強調表示 */}
       {!loading && (
-        <section className="py-6">
-          <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">ポートフォリオ概要</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">評価額合計</h3>
-              <p className="text-3xl font-bold text-purple-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().total)}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                <span className="inline-flex items-center text-green-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                  </svg>
-                  10分ごとに自動更新
-                </span>
-              </p>
-              <div className="mt-4">
-                <Link
-                  href="/stocks"
-                  className="text-purple-600 text-sm font-medium hover:text-purple-800 transition-colors flex items-center"
-                >
-                  詳細を見る
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                </Link>
-              </div>
+        <section className="py-6 -mt-6">
+          <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-4">
+              <h2 className="text-3xl font-bold text-white">ポートフォリオ概要</h2>
+              <p className="text-indigo-100 text-sm mt-1">あなたの投資状況を一目で確認できます</p>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">日本株評価額</h3>
-              <p className="text-3xl font-bold text-red-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().japanTotal)}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                <span className="inline-flex items-center text-green-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                  </svg>
-                  株価は10分ごとに自動更新
-                </span>
-              </p>
-              <div className="mt-4">
-                <Link
-                  href="/stocks"
-                  className="text-red-600 text-sm font-medium hover:text-red-800 transition-colors flex items-center"
-                >
-                  詳細を見る
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                </Link>
+            {/* 概要カード - ヒーローセクションから移動 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-xl border border-indigo-200 hover:shadow-md transition-all">
+                <div className="text-2xl font-bold text-indigo-700">{stocks.length}</div>
+                <div className="text-indigo-600 font-medium">登録銘柄数</div>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200 hover:shadow-md transition-all">
+                <div className="text-2xl font-bold text-purple-700">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(calculateTotalValueByCountry().total)}
+                </div>
+                <div className="text-purple-600 font-medium">評価額合計</div>
+              </div>
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 hover:shadow-md transition-all">
+                <div className="text-2xl font-bold text-green-700">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalInvestment)}
+                </div>
+                <div className="text-green-600 font-medium">投資総額</div>
+              </div>
+              <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200 hover:shadow-md transition-all">
+                <div className="text-2xl font-bold text-amber-700">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalDividends)}
+                </div>
+                <div className="text-amber-600 font-medium">配当金合計</div>
               </div>
             </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">米国株評価額</h3>
-              <p className="text-3xl font-bold text-blue-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().usTotal)}
-              </p>
-              {exchangeRate && (
-                <p className="text-xs text-gray-500 mt-1">
-                  為替レート: {exchangeRate.rate.toFixed(2)}円/$
-                  <br />
-                  更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP')}
-                  <br />
-                  <span className="inline-flex items-center text-green-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                    </svg>
-                    株価・為替レートは10分ごとに自動更新
-                  </span>
-                </p>
-              )}
-              <div className="mt-4">
-                <Link
-                  href="/stocks"
-                  className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors flex items-center"
-                >
-                  詳細を見る
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                </Link>
-              </div>
-            </div>
-            
-            {/* リバランス提案 */}
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">リバランス提案</h3>
-              {(() => {
-                const { difference, targetCountry } = calculateRebalanceSuggestion();
-                const targetColor = targetCountry === '日本株' ? 'text-red-600' : 'text-blue-600';
-                
-                return (
-                  <>
-                    <div className="mb-2">
-                      <span className="text-sm text-gray-600">追加購入推奨：</span>
-                      <span className={`text-lg font-bold ${targetColor}`}>{targetCountry}</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-600">
-                      {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(difference)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      ※売却せず追加購入のみの提案です
-                    </p>
-                    <div className="mt-4 text-sm text-gray-600">
-                      <div className="flex justify-between mb-1">
-                        <span>日本株比率:</span>
-                        <span className="font-medium">
-                          {Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100)}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>米国株比率:</span>
-                        <span className="font-medium">
-                          {Math.round((calculateTotalValueByCountry().usTotal / calculateTotalValueByCountry().total) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
 
-          {/* 円グラフによる資産配分の可視化 */}
-          <div className="mt-8 bg-white p-6 rounded-xl shadow-md border border-gray-100">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">資産配分</h3>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-              {/* 円グラフ（CSSで実装） */}
-              <div className="relative w-48 h-48">
-                {(() => {
-                  const japanPercent = Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100);
-                  const usPercent = 100 - japanPercent;
+            {/* 評価額とリバランスセクション */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 p-6 pt-0">
+              {/* 円グラフによる資産配分の可視化 - 左側に配置 */}
+              <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-xl font-semibold text-gray-700 mb-4">資産配分</h3>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+                  {/* 円グラフ（CSSで実装） */}
+                  <div className="relative w-48 h-48">
+                    {(() => {
+                      const japanPercent = Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100);
+                      const usPercent = 100 - japanPercent;
+                      
+                      return (
+                        <>
+                          <div 
+                            className="absolute inset-0 rounded-full shadow-inner"
+                            style={{
+                              background: `conic-gradient(#ef4444 0% ${japanPercent}%, #3b82f6 ${japanPercent}% 100%)`
+                            }}
+                          ></div>
+                          <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center shadow-sm">
+                            <span className="text-lg font-bold text-gray-800">
+                              {calculateTotalValueByCountry().total.toLocaleString()}円
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
                   
-                  return (
-                    <>
-                      <div 
-                        className="absolute inset-0 rounded-full"
-                        style={{
-                          background: `conic-gradient(#ef4444 0% ${japanPercent}%, #3b82f6 ${japanPercent}% 100%)`
-                        }}
-                      ></div>
-                      <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center">
-                        <span className="text-lg font-bold text-gray-800">
-                          {calculateTotalValueByCountry().total.toLocaleString()}円
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
+                  {/* 凡例 */}
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-500 rounded-sm"></div>
+                      <span className="text-gray-700">日本株 ({Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
+                      <span className="ml-2 font-semibold text-gray-900">
+                        {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().japanTotal)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-blue-500 rounded-sm"></div>
+                      <span className="text-gray-700">米国株 ({Math.round((calculateTotalValueByCountry().usTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
+                      <span className="ml-2 font-semibold text-gray-900">
+                        {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().usTotal)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              {/* 凡例 */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded-sm"></div>
-                  <span className="text-gray-700">日本株 ({Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
-                  <span className="ml-2 font-semibold text-gray-900">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().japanTotal)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-sm"></div>
-                  <span className="text-gray-700">米国株 ({Math.round((calculateTotalValueByCountry().usTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
-                  <span className="ml-2 font-semibold text-gray-900">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().usTotal)}
-                  </span>
-                </div>
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    理想的な資産配分は投資家の目標やリスク許容度によって異なります。一般的には、分散投資によりリスクを軽減することが推奨されています。
+
+              {/* 評価額カード - 右側に配置 */}
+              <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <h3 className="text-lg font-medium text-gray-500 mb-2">評価額合計</h3>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().total)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    <span className="inline-flex items-center text-green-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                      </svg>
+                      10分ごとに自動更新
+                    </span>
                   </p>
                 </div>
+                
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <h3 className="text-lg font-medium text-gray-500 mb-2">日本株評価額</h3>
+                  <p className="text-3xl font-bold text-red-600">
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().japanTotal)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    <span className="inline-flex items-center text-green-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                      </svg>
+                      株価は10分ごとに自動更新
+                    </span>
+                  </p>
+                </div>
+                
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <h3 className="text-lg font-medium text-gray-500 mb-2">米国株評価額</h3>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().usTotal)}
+                  </p>
+                  {exchangeRate && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      為替レート: {exchangeRate.rate.toFixed(2)}円/$
+                      <span className="inline-flex items-center text-green-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        </svg>
+                        10分ごとに自動更新
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                {/* リバランス提案 - 幅を広げる */}
+                <div className="md:col-span-3 bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl shadow-sm border border-indigo-100 hover:shadow-md transition-shadow">
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">リバランス提案</h3>
+                  {(() => {
+                    const { difference, targetCountry } = calculateRebalanceSuggestion();
+                    const targetColor = targetCountry === '日本株' ? 'text-red-600' : 'text-blue-600';
+                    
+                    return (
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <div className="mb-2">
+                            <span className="text-sm text-gray-600">追加購入推奨：</span>
+                            <span className={`text-lg font-bold ${targetColor}`}>{targetCountry}</span>
+                          </div>
+                          <p className="text-3xl font-bold text-green-600">
+                            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(difference)}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            ※売却せず追加購入のみの提案です
+                          </p>
+                        </div>
+                        <div className="mt-4 md:mt-0 text-sm text-gray-600 bg-white p-3 rounded-lg shadow-sm">
+                          <div className="flex justify-between mb-1">
+                            <span>日本株比率:</span>
+                            <span className="font-medium">
+                              {Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100)}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>米国株比率:</span>
+                            <span className="font-medium">
+                              {Math.round((calculateTotalValueByCountry().usTotal / calculateTotalValueByCountry().total) * 100)}%
+                            </span>
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <span className="text-xs text-indigo-600">理想的な資産配分は投資家の目標やリスク許容度によって異なります</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
+            </div>
+
+            {/* アクションボタン */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <Link
+                href="/stocks"
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+              >
+                銘柄詳細を見る
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </Link>
             </div>
           </div>
         </section>
