@@ -318,14 +318,23 @@ export default function Home() {
                   <p className="text-3xl font-bold text-purple-600">
                     {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().total)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    <span className="inline-flex items-center text-green-600">
+                  <div className="text-xs text-gray-500 mt-1">
+                    <div className="inline-flex items-center text-green-600 mb-1">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
                       </svg>
                       株価・為替レートは10分ごとに自動更新
-                    </span>
-                  </p>
+                    </div>
+                    <div className="text-gray-600">
+                      最終更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
