@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 投資ビジョン
 
-## Getting Started
+投資ビジョンは、株式投資の記録と管理を簡単に行うためのウェブアプリケーションです。配当金の受け取りと株式購入を簡単に記録・管理できるモダンなツールとして設計されています。
 
-First, run the development server:
+![投資ビジョン](https://github.com/dtakamiya/invest-vision/assets/YOUR_ASSET_ID/screenshot.png)
+
+## 主な機能
+
+- **投資資金管理**: 投資に使用する資金を記録・管理
+- **銘柄管理**: 保有株式銘柄の登録と管理
+- **購入記録**: 株式購入の詳細な記録（日付、数量、価格など）
+- **配当金記録**: 受け取った配当金の記録と管理
+- **ポートフォリオ分析**: 国別の資産配分やリバランス提案
+- **データのバックアップ/復元**: JSONファイルによるデータのエクスポート/インポート
+
+## 技術スタック
+
+- **フロントエンド**: [Next.js](https://nextjs.org) (React), [TailwindCSS](https://tailwindcss.com)
+- **データベース**: [IndexedDB](https://developer.mozilla.org/ja/docs/Web/API/IndexedDB_API) (ブラウザ内ストレージ)
+- **API**: 株価情報と為替レートの取得
+
+## 使い方
+
+1. **投資資金の登録**: 「投資資金管理」から入金記録を追加
+2. **銘柄登録**: 「銘柄一覧」から新しい株式銘柄を登録
+3. **購入記録**: 株式を購入したら「購入記録」から記録を追加
+4. **配当金記録**: 配当金を受け取ったら「配当金記録」から記録を追加
+5. **管理**: 各ページで記録の確認、編集、削除が可能
+
+## データの保存について
+
+このアプリケーションでは、すべてのデータはブラウザの**IndexedDB**に保存されます。
+
+### メリット
+- インターネット接続がなくても使用可能
+- サーバーにデータを送信しないため、プライバシーが保護される
+- 高速な動作
+
+### 注意点
+- ブラウザのデータを消去すると、保存したデータも削除される
+- 異なるブラウザやデバイス間でデータは共有されない
+- 定期的なデータのバックアップを推奨
+
+## 開発環境のセットアップ
 
 ```bash
+# リポジトリのクローン
+git clone https://github.com/dtakamiya/invest-vision.git
+cd invest-vision
+
+# 依存関係のインストール
+npm install
+
+# 開発サーバーの起動
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+[http://localhost:3000](http://localhost:3000)をブラウザで開くと、アプリケーションが表示されます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ライセンス
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[MIT](LICENSE)
