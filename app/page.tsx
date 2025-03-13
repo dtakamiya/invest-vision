@@ -234,6 +234,12 @@ export default function Home() {
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(calculateTotalValueByCountry().total)}
                 </div>
                 <div className="text-purple-600 font-medium">評価額合計</div>
+                {totalInvestment > 0 && (
+                  <div className="text-xs text-purple-800 mt-1 flex items-center">
+                    <span className="font-semibold">利回り: {((calculateTotalValueByCountry().total / totalInvestment) * 100 - 100).toFixed(2)}%</span>
+                    <span className="ml-1">（評価額÷投資総額）</span>
+                  </div>
+                )}
               </div>
               <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 hover:shadow-md transition-all">
                 <div className="text-2xl font-bold text-green-700">
