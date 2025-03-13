@@ -91,7 +91,9 @@ export default function StocksPage() {
             
             // 所有数を計算（購入数量の合計）
             const totalQuantity = stockPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
-            quantities.set(stock.id, totalQuantity);
+            if (stock.id !== undefined) {
+              quantities.set(stock.id, totalQuantity);
+            }
           }
           
           setStockQuantities(quantities);
@@ -316,7 +318,7 @@ export default function StocksPage() {
                               stock, 
                               stockPrice, 
                               exchangeRate, 
-                              stockQuantities.get(stock.id) || 0
+                              stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
                             ).value?.toLocaleString()} 円
                             {stockPrice.currency === 'USD' && (
                               <div className="text-xs text-gray-500">
@@ -338,7 +340,7 @@ export default function StocksPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="font-bold text-gray-800">
-                          {stockQuantities.get(stock.id)?.toLocaleString() || 0}株
+                          {stock.id !== undefined ? stockQuantities.get(stock.id as number)?.toLocaleString() || 0 : 0}株
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">

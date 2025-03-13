@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbHelper } from '@/app/lib/db';
 
+type Params = {
+  params: {
+    id: string;
+  };
+};
+
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: Params
 ) {
   try {
     const data = await request.json();
-    const id = parseInt(context.params.id);
+    const id = parseInt(params.id);
 
     // 必須フィールドの検証
     if (!data.symbol || !data.name) {
@@ -41,10 +47,10 @@ export async function PUT(
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: Params
 ) {
   try {
-    const id = parseInt(context.params.id);
+    const id = parseInt(params.id);
 
     // 銘柄情報の取得
     const stock = await dbHelper.stocks.findUnique({

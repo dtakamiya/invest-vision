@@ -39,7 +39,7 @@ export default function FundsPage() {
     }
 
     try {
-      await dbHelper.investmentFunds.delete({ id });
+      await dbHelper.investmentFunds.delete({ where: { id } });
       
       // 再取得
       const fundsData = await dbHelper.investmentFunds.findMany({

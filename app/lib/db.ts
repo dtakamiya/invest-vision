@@ -4,7 +4,7 @@
 export type Country = '日本' | '米国';
 
 export interface Stock {
-  id: number;
+  id?: number;
   symbol: string;
   name: string;
   country: Country;  // 投資国（日本/米国）
@@ -61,7 +61,10 @@ export interface InvestmentFund {
 
 // データベースヘルパーの型定義
 export interface DbOperations<T> {
-  findMany(options?: { orderBy?: { [key: string]: 'asc' | 'desc' } }): Promise<T[]>;
+  findMany(options?: { 
+    orderBy?: { [key: string]: 'asc' | 'desc' },
+    include?: { [key: string]: boolean }
+  }): Promise<T[]>;
   findUnique(params: { where: { id: number } }): Promise<T | null>;
   update(params: { where: { id: number }, data: Partial<T> }): Promise<T>;
   create(params: { data: T }): Promise<T>;
@@ -159,7 +162,10 @@ export function openDB(): Promise<IDBDatabase> {
 // データベース操作のヘルパー関数
 export const dbHelper: DbHelper = {
   stocks: {
-    async findMany(options = {}) {
+    async findMany(options: {
+      orderBy?: { [key: string]: 'asc' | 'desc' },
+      include?: { [key: string]: boolean }
+    } = {}) {
       const db = await openDB();
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(['stocks'], 'readonly');

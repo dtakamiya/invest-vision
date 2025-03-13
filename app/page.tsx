@@ -26,10 +26,10 @@ export default function Home() {
   // 投資国ごとの評価額を計算する関数
   const calculateTotalValueByCountry = () => {
     const japanTotal = stocks
-      .filter(stock => stock.country === '日本')
+      .filter(stock => stock.country === '日本' && stock.id !== undefined)
       .reduce((sum, stock) => {
         const stockPrice = stockPrices.get(stock.symbol);
-        const quantity = stockQuantities.get(stock.id) || 0;
+        const quantity = stockQuantities.get(stock.id as number) || 0;
         if (stockPrice && quantity > 0) {
           return sum + (stockPrice.price * quantity);
         }
@@ -37,10 +37,10 @@ export default function Home() {
       }, 0);
 
     const usTotal = stocks
-      .filter(stock => stock.country === '米国')
+      .filter(stock => stock.country === '米国' && stock.id !== undefined)
       .reduce((sum, stock) => {
         const stockPrice = stockPrices.get(stock.symbol);
-        const quantity = stockQuantities.get(stock.id) || 0;
+        const quantity = stockQuantities.get(stock.id as number) || 0;
         if (stockPrice && quantity > 0) {
           // 通貨がUSDの場合のみ為替レートを適用
           if (stockPrice.currency === 'USD') {
@@ -52,18 +52,20 @@ export default function Home() {
         return sum;
       }, 0);
 
-    const total = stocks.reduce((sum, stock) => {
-      const stockPrice = stockPrices.get(stock.symbol);
-      const quantity = stockQuantities.get(stock.id) || 0;
-      if (stockPrice && quantity > 0) {
-        if (stock.country === '米国' && stockPrice.currency === 'USD') {
-          return sum + (stockPrice.price * quantity * exchangeRate.rate);
-        } else {
-          return sum + (stockPrice.price * quantity);
+    const total = stocks
+      .filter(stock => stock.id !== undefined)
+      .reduce((sum, stock) => {
+        const stockPrice = stockPrices.get(stock.symbol);
+        const quantity = stockQuantities.get(stock.id as number) || 0;
+        if (stockPrice && quantity > 0) {
+          if (stock.country === '米国' && stockPrice.currency === 'USD') {
+            return sum + (stockPrice.price * quantity * exchangeRate.rate);
+          } else {
+            return sum + (stockPrice.price * quantity);
+          }
         }
-      }
-      return sum;
-    }, 0);
+        return sum;
+      }, 0);
 
     return {
       japanTotal: Math.round(japanTotal),
@@ -120,11 +122,13 @@ export default function Home() {
         // 各銘柄の所有数を計算
         const quantities = new Map<number, number>();
         for (const stock of stocksData) {
-          // 銘柄IDでフィルタリング
-          const stockPurchases = purchasesData.filter(purchase => purchase.stockId === stock.id);
-          // 所有数を計算（購入数量の合計）
-          const totalQuantity = stockPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
-          quantities.set(stock.id, totalQuantity);
+          if (stock.id !== undefined) {
+            // 銘柄IDでフィルタリング
+            const stockPurchases = purchasesData.filter(purchase => purchase.stockId === stock.id);
+            // 所有数を計算（購入数量の合計）
+            const totalQuantity = stockPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
+            quantities.set(stock.id, totalQuantity);
+          }
         }
         setStockQuantities(quantities);
 
