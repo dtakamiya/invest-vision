@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// キャッシュ用のインターフェース
+interface StockDataCache {
+  data: any;
+  timestamp: number;
+}
+
+// グローバル変数でキャッシュを管理
+const stockCache = new Map<string, StockDataCache>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5分
+
 /**
  * Yahoo Finance APIから株価データを取得するAPIルート
  * クライアントサイドからのCORS問題を回避するために使用
@@ -20,6 +30,12 @@ export async function GET(request: NextRequest) {
   try {
     // URLからシンボルを取得
     const symbol = request.nextUrl.searchParams.get('symbol');
+    const forceRefresh = request.nextUrl.searchParams.has('refresh');
+    const now = Date.now();
+    
+    // APIリクエストが実際に行われたかどうかを追跡するフラグ
+    let apiRequestMade = false;
+    let cacheHit = false;
     
     console.log('リクエストパラメータ:', {
       originalSymbol: symbol,
@@ -45,20 +61,56 @@ export async function GET(request: NextRequest) {
       formattedSymbol = `${symbol}.T`;
     }
     
+    // キャッシュキーを生成
+    const cacheKey = formattedSymbol;
+    
+    // キャッシュチェック（強制更新でない場合）
+    if (!forceRefresh) {
+      const cachedData = stockCache.get(cacheKey);
+      if (cachedData && (now - cachedData.timestamp < CACHE_DURATION)) {
+        console.log(`キャッシュされた株価データを使用: ${formattedSymbol}`);
+        cacheHit = true;
+        
+        // キャッシュヒット情報を追加
+        const responseData = {
+          ...cachedData.data,
+          _cacheInfo: {
+            hit: true,
+            timestamp: new Date(cachedData.timestamp).toISOString(),
+            age: Math.floor((now - cachedData.timestamp) / 1000) + 's'
+          }
+        };
+        
+        return new NextResponse(
+          JSON.stringify(responseData),
+          { 
+            status: 200,
+            headers: headers
+          }
+        );
+      }
+    }
+    
     // Yahoo Finance APIにアクセス
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${formattedSymbol}?interval=1d&range=1d`;
     
+    apiRequestMade = true;
     console.log('Yahoo Finance APIリクエスト:', {
       url,
       formattedSymbol,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      cacheStatus: 'MISS'
     });
     
     let response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       },
-      next: { revalidate: 300 } // 5分間キャッシュ
+      cache: 'no-store' // キャッシュを使用しない
     });
 
     // .Tで失敗した場合は.JPを試す
@@ -69,21 +121,27 @@ export async function GET(request: NextRequest) {
       console.log('Yahoo Finance API 2回目のリクエスト (.JP):', {
         url: jpUrl,
         formattedSymbol,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
       });
 
       response = await fetch(jpUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         },
-        next: { revalidate: 300 } // 5分間キャッシュ
+        cache: 'no-store' // キャッシュを使用しない
       });
     }
     
     console.log('Yahoo Finance APIレスポンス:', {
       status: response.status,
       statusText: response.statusText,
-      headers: Object.fromEntries(response.headers)
+      headers: Object.fromEntries(response.headers),
+      timestamp: new Date().toISOString(),
+      cacheHit: false
     });
     
     if (!response.ok) {
@@ -105,9 +163,39 @@ export async function GET(request: NextRequest) {
     
     const data = await response.json();
     
+    // レスポンスデータの一部をログに出力
+    console.log('Yahoo Finance APIレスポンスデータ:', {
+      symbol: formattedSymbol,
+      hasData: !!data.chart?.result?.[0],
+      timestamp: new Date().toISOString(),
+      meta: data.chart?.result?.[0]?.meta ? {
+        currency: data.chart.result[0].meta.currency,
+        regularMarketPrice: data.chart.result[0].meta.regularMarketPrice,
+        previousClose: data.chart.result[0].meta.previousClose,
+        exchangeName: data.chart.result[0].meta.exchangeName
+      } : 'データなし',
+      cacheHit: false
+    });
+    
+    // キャッシュを更新
+    stockCache.set(cacheKey, {
+      data,
+      timestamp: now
+    });
+    
+    // キャッシュ情報を追加
+    const responseData = {
+      ...data,
+      _cacheInfo: {
+        hit: false,
+        timestamp: new Date(now).toISOString(),
+        age: '0s'
+      }
+    };
+    
     // 成功した場合はデータを返す
     return new NextResponse(
-      JSON.stringify(data),
+      JSON.stringify(responseData),
       { 
         status: 200,
         headers: headers // キャッシュヘッダーを含むヘッダーを使用
