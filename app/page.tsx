@@ -264,7 +264,7 @@ export default function Home() {
                 <div className="text-indigo-600 font-medium">登録銘柄数</div>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200 hover:shadow-md transition-all">
-                <div className="text-2xl font-bold text-purple-700">
+                <div className="text-xl font-bold text-purple-700">
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(calculateTotalValueByCountry().total)}
                 </div>
                 <div className="text-purple-600 font-medium">評価額合計</div>
@@ -276,13 +276,13 @@ export default function Home() {
                 )}
               </div>
               <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 hover:shadow-md transition-all">
-                <div className="text-2xl font-bold text-green-700">
+                <div className="text-xl font-bold text-green-700">
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalInvestment)}
                 </div>
                 <div className="text-green-600 font-medium">投資総額</div>
               </div>
               <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200 hover:shadow-md transition-all">
-                <div className="text-2xl font-bold text-amber-700">
+                <div className="text-xl font-bold text-amber-700">
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalDividends)}
                 </div>
                 <div className="text-amber-600 font-medium">配当金合計</div>
@@ -386,21 +386,21 @@ export default function Home() {
               <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <h3 className="text-lg font-medium text-gray-500 mb-2">評価額合計</h3>
-                  <p className="text-3xl font-bold text-purple-600">
+                  <p className="text-2xl font-bold text-purple-600">
                     {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().total)}
                   </p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <h3 className="text-lg font-medium text-gray-500 mb-2">日本株評価額</h3>
-                  <p className="text-3xl font-bold text-red-600">
+                  <p className="text-2xl font-bold text-red-600">
                     {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().japanTotal)}
                   </p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <h3 className="text-lg font-medium text-gray-500 mb-2">米国株評価額</h3>
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-blue-600">
                     {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().usTotal)}
                   </p>
                   {exchangeRate && (
@@ -498,7 +498,7 @@ export default function Home() {
             
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
               <h3 className="text-lg font-medium text-gray-500 mb-2">投資可能額</h3>
-              <p className="text-3xl font-bold text-teal-600">
+              <p className="text-2xl font-bold text-teal-600">
                 {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(totalFunds - totalInvestment + totalDividends)}
               </p>
               <div className="flex items-center mt-2 text-sm text-gray-500">
