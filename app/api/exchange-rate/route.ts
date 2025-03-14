@@ -25,12 +25,19 @@ export async function GET(request: NextRequest) {
     });
     
     if (!response.ok) {
+      console.error(`Yahoo Finance APIエラー: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`エラー詳細: ${errorText}`);
       throw new Error(`為替レートの取得に失敗しました: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
 
+    // レスポンス全体をログ出力（デバッグ用）
+    console.log('Yahoo Finance API完全レスポンス:', JSON.stringify(data));
+
     if (!data.chart?.result?.[0]?.meta?.regularMarketPrice) {
+      console.error('為替レートデータ不足:', JSON.stringify(data));
       throw new Error('為替レートのデータが見つかりませんでした');
     }
 

@@ -139,7 +139,10 @@ export default function StocksPage() {
       
       // Server Actionを呼び出し
       const { updateExchangeRateManually } = await import('@/app/actions/exchange-rate');
+      console.log('手動更新: Server Actionを呼び出します');
       const result = await updateExchangeRateManually();
+      
+      console.log('手動更新: Server Action結果:', result);
       
       if (result.success && result.rate) {
         setExchangeRate({
@@ -150,11 +153,12 @@ export default function StocksPage() {
         });
         toast.success('為替レートを更新しました');
       } else {
+        console.error('手動更新: 為替レート更新エラー:', result.error);
         toast.error(result.error || '為替レートの更新に失敗しました');
       }
     } catch (error) {
-      console.error('為替レートの更新に失敗しました:', error);
-      toast.error('為替レートの更新に失敗しました');
+      console.error('手動更新: 為替レートの更新に失敗しました:', error);
+      toast.error(error instanceof Error ? error.message : '為替レートの更新に失敗しました');
     } finally {
       setExchangeRateLoading(false);
     }
