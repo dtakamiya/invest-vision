@@ -14,10 +14,15 @@ export interface StockPrice {
  */
 export async function fetchStockPrice(symbol: string): Promise<StockPrice | null> {
   try {
+    // タイムスタンプをクエリパラメータとして追加してキャッシュを回避
+    const timestamp = new Date().getTime();
     // APIエンドポイントにリクエスト
-    const response = await fetch(`/api/stock?symbol=${encodeURIComponent(symbol)}`, {
-      // キャッシュを許可（サーバー側で5分間のキャッシュを設定済み）
+    const response = await fetch(`/api/stock?symbol=${encodeURIComponent(symbol)}&_t=${timestamp}`, {
+      // キャッシュを回避する設定
+      cache: 'no-store',
       headers: {
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
       }
     });

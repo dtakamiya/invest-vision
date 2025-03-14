@@ -5,10 +5,14 @@ interface ExchangeRate {
 
 export async function fetchUSDJPYRate(): Promise<ExchangeRate> {
   try {
-    // タイムスタンプをクエリパラメータとして追加（キャッシュ制御はサーバー側で行う）
-    const response = await fetch(`/api/exchange-rate`, {
-      // キャッシュを許可（サーバー側で5分間のキャッシュを設定済み）
+    // タイムスタンプをクエリパラメータとして追加してキャッシュを回避
+    const timestamp = new Date().getTime();
+    const response = await fetch(`/api/exchange-rate?_t=${timestamp}`, {
+      // キャッシュを回避する設定
+      cache: 'no-store',
       headers: {
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
       }
     });
