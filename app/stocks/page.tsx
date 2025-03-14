@@ -413,4 +413,108 @@ export default function StocksPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded ${stock.assetType === 'stock' ? 'bg-green-50 text-green-700' : 'bg-purple-50 text-purple-700'}`}
+                        <span className={`px-2 py-1 rounded ${stock.assetType === 'stock' ? 'bg-green-50 text-green-700' : 'bg-purple-50 text-purple-700'}`}>
+                          {stock.assetType === 'stock' ? '株式' : '投資信託'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {stock.assetType === 'fund' ? (
+                          fundPrice ? (
+                            <span className="font-medium">
+                              {fundPrice.price.toLocaleString()} 円
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">取得中...</span>
+                          )
+                        ) : (
+                          stockPrice ? (
+                            <span className="font-medium">
+                              {stockPrice.price.toLocaleString()} {stockPrice.currency}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">取得中...</span>
+                          )
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {stock.id !== undefined && stockQuantities.has(stock.id) ? (
+                          (() => {
+                            const quantity = stockQuantities.get(stock.id) || 0;
+                            const { value, currency } = calculateValue(
+                              stock,
+                              stockPrice,
+                              fundPrice,
+                              exchangeRate,
+                              quantity
+                            );
+                            return value !== null ? (
+                              <span className="font-medium text-green-600">
+                                {value.toLocaleString()} {currency}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {stock.id !== undefined && stockQuantities.has(stock.id) ? (
+                          <span className="font-medium">
+                            {stockQuantities.get(stock.id)?.toLocaleString() || 0}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">0</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <Link
+                          href={`/stocks/${stock.id}/purchases`}
+                          className="text-indigo-600 hover:text-indigo-900 font-medium"
+                        >
+                          購入記録を見る
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <Link
+                          href={`/stocks/${stock.id}/dividends`}
+                          className="text-indigo-600 hover:text-indigo-900 font-medium"
+                        >
+                          配当金記録を見る
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link
+                          href={`/stocks/${stock.id}/edit`}
+                          className="text-indigo-600 hover:text-indigo-900 mr-4"
+                        >
+                          編集
+                        </Link>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`${stock.name}を削除してもよろしいですか？`)) {
+                              if (stock.id !== undefined) {
+                                dbHelper.stocks.delete({ where: { id: stock.id } }).then(() => {
+                                  setStocks(stocks.filter(s => s.id !== stock.id));
+                                  toast.success(`${stock.name}を削除しました`);
+                                });
+                              }
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          削除
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
