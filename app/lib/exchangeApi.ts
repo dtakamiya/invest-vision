@@ -7,6 +7,7 @@ export async function fetchUSDJPYRate(): Promise<ExchangeRate> {
   try {
     // タイムスタンプをクエリパラメータとして追加してキャッシュを回避
     const timestamp = new Date().getTime();
+    console.log(`為替レート取得関数が呼び出されました: ${new Date().toISOString()}`);
     const response = await fetch(`/api/exchange-rate?_t=${timestamp}`, {
       cache: 'no-store',
       headers: {
