@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 // アプリケーションのバージョン情報
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.3.0';
 
 export const metadata: Metadata = {
   title: "投資ビジョン - 配当金・株式購入記録アプリ",

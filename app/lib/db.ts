@@ -112,7 +112,7 @@ export interface ExportData {
 
 // データベース名とバージョン
 const DB_NAME = 'investVisionDB';
-const DB_VERSION = 7;  // バージョンを7に更新
+const DB_VERSION = 8;  // バージョンを8に更新
 
 // データベース接続を開く
 export function openDB(): Promise<IDBDatabase> {
@@ -273,6 +273,12 @@ export function openDB(): Promise<IDBDatabase> {
             }
           }
         }
+      }
+
+      // バージョン8への更新：インポート処理の修正対応
+      if (oldVersion < 8) {
+        console.log('データベースをバージョン8に更新しています...');
+        // ここでは構造的な変更はなく、アプリケーションコードの修正に対応するためのバージョンアップ
       }
     };
   });
@@ -1171,7 +1177,7 @@ export const dataManagement = {
       const processedData = this._processImportData(data);
 
       // トランザクションを開始
-      const transaction = db.transaction(['stocks', 'purchases', 'dividends', 'investmentFunds'], 'readwrite');
+      const transaction = db.transaction(['portfolios', 'stocks', 'purchases', 'dividends', 'investmentFunds'], 'readwrite');
       
       // トランザクションの完了を監視するPromiseを作成
       const transactionComplete = new Promise<void>((resolve, reject) => {
@@ -1183,6 +1189,7 @@ export const dataManagement = {
       try {
         // 既存のデータを削除
         await Promise.all([
+          transaction.objectStore('portfolios').clear(),
           transaction.objectStore('stocks').clear(),
           transaction.objectStore('purchases').clear(),
           transaction.objectStore('dividends').clear(),
@@ -1191,6 +1198,9 @@ export const dataManagement = {
         
         // 新しいデータを追加
         await Promise.all([
+          ...processedData.portfolios.map(portfolio => 
+            transaction.objectStore('portfolios').add(portfolio)
+          ),
           ...processedData.stocks.map(stock => 
             transaction.objectStore('stocks').add(stock)
           ),
