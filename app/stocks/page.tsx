@@ -136,9 +136,22 @@ export default function StocksPage() {
   const updateExchangeRateManually = async () => {
     try {
       setExchangeRateLoading(true);
-      const rate = await fetchUSDJPYRate();
-      setExchangeRate(rate);
-      toast.success('為替レートを更新しました');
+      
+      // Server Actionを呼び出し
+      const { updateExchangeRateManually } = await import('@/app/actions/exchange-rate');
+      const result = await updateExchangeRateManually();
+      
+      if (result.success && result.rate) {
+        setExchangeRate({
+          rate: result.rate,
+          lastUpdated: result.lastUpdated instanceof Date 
+            ? result.lastUpdated 
+            : new Date() // lastUpdatedがDateでない場合は現在時刻を使用
+        });
+        toast.success('為替レートを更新しました');
+      } else {
+        toast.error(result.error || '為替レートの更新に失敗しました');
+      }
     } catch (error) {
       console.error('為替レートの更新に失敗しました:', error);
       toast.error('為替レートの更新に失敗しました');

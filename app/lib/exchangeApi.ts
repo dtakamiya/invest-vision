@@ -3,16 +3,18 @@ interface ExchangeRate {
   lastUpdated: Date;
 }
 
-export async function fetchUSDJPYRate(): Promise<ExchangeRate> {
+export async function fetchUSDJPYRate(isManualUpdate = false): Promise<ExchangeRate> {
   try {
-    // タイムスタンプをクエリパラメータとして追加してキャッシュを回避
+    // タイムスタンプとマニュアル更新フラグをクエリパラメータとして追加
     const timestamp = new Date().getTime();
-    const response = await fetch(`/api/exchange-rate?_t=${timestamp}`, {
-      // キャッシュを回避する設定
+    const url = `/api/exchange-rate?_t=${timestamp}${isManualUpdate ? '&manual=true' : ''}`;
+    
+    const response = await fetch(url, {
+      // キャッシュを回避する設定を強化
       cache: 'no-store',
       headers: {
         'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
       }
     });
