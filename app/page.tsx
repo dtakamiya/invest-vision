@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { openDB, dbHelper, Stock, Purchase } from "@/app/lib/db";
 import { StockPrice, fetchMultipleStockPrices } from "@/app/lib/stockApi";
 import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
+import { toast } from 'react-hot-toast';
 
 interface Fund {
   id: number;
@@ -22,6 +23,7 @@ export default function Home() {
   const [stockPrices, setStockPrices] = useState<Map<string, StockPrice>>(new Map());
   const [exchangeRate, setExchangeRate] = useState<{ rate: number; lastUpdated: Date }>({ rate: 150, lastUpdated: new Date() });
   const [stockQuantities, setStockQuantities] = useState<Map<number, number>>(new Map());
+  const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
 
   // 投資国ごとの評価額を計算する関数
   const calculateTotalValueByCountry = () => {
@@ -88,6 +90,21 @@ export default function Home() {
       difference,
       targetCountry
     };
+  };
+
+  // 為替レートを手動で更新する関数
+  const updateExchangeRateManually = async () => {
+    try {
+      setExchangeRateLoading(true);
+      const rate = await fetchUSDJPYRate();
+      setExchangeRate(rate);
+      toast.success('為替レートを更新しました');
+    } catch (error) {
+      console.error('為替レートの更新に失敗しました:', error);
+      toast.error('為替レートの更新に失敗しました');
+    } finally {
+      setExchangeRateLoading(false);
+    }
   };
 
   // IndexedDBの初期化
@@ -318,14 +335,34 @@ export default function Home() {
                         </svg>
                         株価・為替レートは10分ごとに自動更新
                       </div>
-                      <div className="text-gray-600">
-                        最終更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                      <div className="flex items-center justify-between">
+                        <div className="text-gray-600">
+                          最終更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                        <button 
+                          onClick={updateExchangeRateManually}
+                          disabled={exchangeRateLoading}
+                          className="ml-2 p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors flex items-center disabled:opacity-50"
+                          title="為替レートを手動更新"
+                        >
+                          {exchangeRateLoading ? (
+                            <svg className="animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                            </svg>
+                          )}
+                          <span className="text-xs">手動更新</span>
+                        </button>
                       </div>
                     </div>
                   </div>
