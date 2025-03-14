@@ -12,6 +12,11 @@ export async function GET(request: NextRequest) {
     'Access-Control-Allow-Headers': 'Content-Type',
   });
 
+  // キャッシュヘッダーを追加
+  const headers = new Headers(corsHeaders);
+  headers.set('Cache-Control', 'public, max-age=300, s-maxage=300');
+  headers.set('Expires', new Date(Date.now() + 300 * 1000).toUTCString());
+
   try {
     // URLからシンボルを取得
     const symbol = request.nextUrl.searchParams.get('symbol');
@@ -53,8 +58,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       },
-      cache: 'no-store',
-      next: { revalidate: 0 }
+      next: { revalidate: 300 } // 5分間キャッシュ
     });
 
     // .Tで失敗した場合は.JPを試す
@@ -72,8 +76,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         },
-        cache: 'no-store',
-        next: { revalidate: 0 }
+        next: { revalidate: 300 } // 5分間キャッシュ
       });
     }
     
@@ -107,7 +110,7 @@ export async function GET(request: NextRequest) {
       JSON.stringify(data),
       { 
         status: 200,
-        headers: corsHeaders
+        headers: headers // キャッシュヘッダーを含むヘッダーを使用
       }
     );
   } catch (error) {

@@ -30,10 +30,9 @@ export async function GET() {
       lastUpdated: new Date()
     });
     
-    // キャッシュを無効化するヘッダーを設定
-    res.headers.set('Cache-Control', 'no-store, max-age=0');
-    res.headers.set('Pragma', 'no-cache');
-    res.headers.set('Expires', '0');
+    // 5分間キャッシュするようにヘッダーを設定
+    res.headers.set('Cache-Control', 'public, max-age=300, s-maxage=300');
+    res.headers.set('Expires', new Date(Date.now() + 300 * 1000).toUTCString());
     
     return res;
   } catch (error) {
@@ -44,7 +43,7 @@ export async function GET() {
       lastUpdated: new Date()
     });
     
-    // エラー時もキャッシュを無効化
+    // エラー時はキャッシュしない
     res.headers.set('Cache-Control', 'no-store, max-age=0');
     res.headers.set('Pragma', 'no-cache');
     res.headers.set('Expires', '0');
