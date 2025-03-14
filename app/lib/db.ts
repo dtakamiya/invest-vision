@@ -3,11 +3,21 @@
 // データベースの型定義
 export type Country = '日本' | '米国';
 
+export interface Portfolio {
+  id?: number;
+  name: string;
+  description?: string;
+  isDefault?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface Stock {
   id?: number;
   symbol: string;
   name: string;
   country: Country;  // 投資国（日本/米国）
+  assetType: 'stock' | 'fund';  // 資産タイプ（株式/投資信託）
   initialPurchaseDate?: Date;  // 初期購入日
   initialQuantity?: number;    // 初期購入数
   initialPrice?: number;       // 初期購入単価
@@ -19,6 +29,7 @@ export interface StockInput {
   symbol: string;
   name: string;
   country: Country;
+  assetType?: 'stock' | 'fund';  // 資産タイプ（株式/投資信託）、省略時は'stock'
   initialPurchaseDate?: Date;
   initialQuantity?: number;
   initialPrice?: number;
@@ -29,6 +40,7 @@ export interface StockInput {
 export interface Purchase {
   id?: number;
   stockId: number;
+  portfolioId?: number;  // ポートフォリオID
   quantity: number;
   price: number;
   fee: number;
@@ -41,6 +53,7 @@ export interface Purchase {
 export interface Dividend {
   id?: number;
   stockId: number;
+  portfolioId?: number;  // ポートフォリオID
   amount: number;
   receivedDate: Date;
   taxAmount?: number;
@@ -51,6 +64,7 @@ export interface Dividend {
 
 export interface InvestmentFund {
   id?: number;
+  portfolioId?: number;  // ポートフォリオID
   amount: number;
   description?: string;
   date: Date;
@@ -62,6 +76,7 @@ export interface InvestmentFund {
 // データベースヘルパーの型定義
 export interface DbOperations<T> {
   findMany(options?: { 
+    where?: { [key: string]: any },
     orderBy?: { [key: string]: 'asc' | 'desc' },
     include?: { [key: string]: boolean }
   }): Promise<T[]>;
@@ -72,11 +87,12 @@ export interface DbOperations<T> {
 }
 
 export interface InvestmentFundOperations extends DbOperations<InvestmentFund> {
-  getTotalFunds(): Promise<number>;
+  getTotalFunds(options?: { where?: { portfolioId?: number } }): Promise<number>;
 }
 
 // データベースヘルパーの型定義
 export interface DbHelper {
+  portfolios: DbOperations<Portfolio>;
   stocks: DbOperations<Stock>;
   purchases: DbOperations<Purchase>;
   dividends: DbOperations<Dividend>;
@@ -85,6 +101,7 @@ export interface DbHelper {
 
 // データのエクスポート・インポート用の型定義
 export interface ExportData {
+  portfolios: Portfolio[];
   stocks: Stock[];
   purchases: Purchase[];
   dividends: Dividend[];
@@ -95,7 +112,7 @@ export interface ExportData {
 
 // データベース名とバージョン
 const DB_NAME = 'investVisionDB';
-const DB_VERSION = 3;
+const DB_VERSION = 7;  // バージョンを7に更新
 
 // データベース接続を開く
 export function openDB(): Promise<IDBDatabase> {
@@ -118,13 +135,15 @@ export function openDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+      const oldVersion = event.oldVersion;
       
       if (!db.objectStoreNames.contains('stocks')) {
         const stockStore = db.createObjectStore('stocks', { keyPath: 'id', autoIncrement: true });
         stockStore.createIndex('symbol', 'symbol', { unique: true });
         stockStore.createIndex('name', 'name', { unique: false });
         stockStore.createIndex('country', 'country', { unique: false });
-      } else if (event.oldVersion < 3) {
+        stockStore.createIndex('assetType', 'assetType', { unique: false });
+      } else if (oldVersion < 3) {
         // バージョン3への更新：country フィールドのインデックスを追加
         const transaction = (event.target as IDBOpenDBRequest).transaction;
         if (transaction) {
@@ -155,14 +174,267 @@ export function openDB(): Promise<IDBDatabase> {
         fundStore.createIndex('date', 'date', { unique: false });
         fundStore.createIndex('type', 'type', { unique: false });
       }
+      
+      // バージョン4への更新：ポートフォリオ関連の更新
+      if (oldVersion < 4) {
+        // Portfolio オブジェクトストアの作成
+        if (!db.objectStoreNames.contains('portfolios')) {
+          const portfolioStore = db.createObjectStore('portfolios', { keyPath: 'id', autoIncrement: true });
+          portfolioStore.createIndex('name', 'name', { unique: false });
+          portfolioStore.createIndex('isDefault', 'isDefault', { unique: false });
+        }
+        
+        // 既存のストアにportfolioIdフィールドのインデックスを追加
+        const transaction = (event.target as IDBOpenDBRequest).transaction;
+        if (transaction) {
+          // Stocks テーブルに portfolioId インデックスを追加
+          if (db.objectStoreNames.contains('stocks')) {
+            const stockStore = transaction.objectStore('stocks');
+            if (!stockStore.indexNames.contains('portfolioId')) {
+              stockStore.createIndex('portfolioId', 'portfolioId', { unique: false });
+            }
+          }
+          
+          // Purchases テーブルに portfolioId インデックスを追加
+          if (db.objectStoreNames.contains('purchases')) {
+            const purchaseStore = transaction.objectStore('purchases');
+            if (!purchaseStore.indexNames.contains('portfolioId')) {
+              purchaseStore.createIndex('portfolioId', 'portfolioId', { unique: false });
+            }
+          }
+          
+          // Dividends テーブルに portfolioId インデックスを追加
+          if (db.objectStoreNames.contains('dividends')) {
+            const dividendStore = transaction.objectStore('dividends');
+            if (!dividendStore.indexNames.contains('portfolioId')) {
+              dividendStore.createIndex('portfolioId', 'portfolioId', { unique: false });
+            }
+          }
+          
+          // InvestmentFunds テーブルに portfolioId インデックスを追加
+          if (db.objectStoreNames.contains('investmentFunds')) {
+            const fundStore = transaction.objectStore('investmentFunds');
+            if (!fundStore.indexNames.contains('portfolioId')) {
+              fundStore.createIndex('portfolioId', 'portfolioId', { unique: false });
+            }
+          }
+        }
+      }
+      
+      // バージョン5への更新：ポートフォリオ関連の更新
+      if (oldVersion < 5) {
+        // ポートフォリオテーブルの作成
+        if (!db.objectStoreNames.contains('portfolios')) {
+          const portfolioStore = db.createObjectStore('portfolios', { keyPath: 'id', autoIncrement: true });
+          portfolioStore.createIndex('name', 'name', { unique: false });
+          portfolioStore.createIndex('description', 'description', { unique: false });
+        }
+      }
+      
+      // バージョン6への更新：銘柄テーブルからportfolioIdを削除
+      if (oldVersion < 6) {
+        // 既存のデータを取得して、portfolioIdを除いた形で再保存する
+        const transaction = (event.target as IDBOpenDBRequest).transaction;
+        if (transaction && db.objectStoreNames.contains('stocks')) {
+          const stockStore = transaction.objectStore('stocks');
+          
+          // portfolioIdインデックスが存在する場合は削除
+          if (stockStore.indexNames.contains('portfolioId')) {
+            stockStore.deleteIndex('portfolioId');
+          }
+          
+          // 既存のデータを取得
+          const getAllRequest = stockStore.getAll();
+          getAllRequest.onsuccess = () => {
+            const stocks = getAllRequest.result;
+            
+            // 一度テーブルをクリア
+            const clearRequest = stockStore.clear();
+            clearRequest.onsuccess = () => {
+              // portfolioIdを除いたデータを再保存
+              stocks.forEach(stock => {
+                const { portfolioId, ...newStock } = stock;
+                stockStore.add(newStock);
+              });
+            };
+          };
+        }
+      }
+
+      // バージョン7への更新：assetType フィールドのインデックスを追加
+      if (oldVersion < 7) {
+        const transaction = (event.target as IDBOpenDBRequest).transaction;
+        if (transaction) {
+          // Stocks テーブルに assetType インデックスを追加
+          if (db.objectStoreNames.contains('stocks')) {
+            const stockStore = transaction.objectStore('stocks');
+            if (!stockStore.indexNames.contains('assetType')) {
+              stockStore.createIndex('assetType', 'assetType', { unique: false });
+            }
+          }
+        }
+      }
     };
   });
 }
 
 // データベース操作のヘルパー関数
 export const dbHelper: DbHelper = {
+  portfolios: {
+    async findMany(options: {
+      where?: { isDefault?: boolean },
+      orderBy?: { [key: string]: 'asc' | 'desc' },
+      include?: { [key: string]: boolean }
+    } = {}) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['portfolios'], 'readonly');
+        const store = transaction.objectStore('portfolios');
+        const request = store.getAll();
+        
+        request.onsuccess = () => {
+          let results = request.result;
+          
+          // where句によるフィルタリング
+          if (options.where) {
+            if (options.where.isDefault !== undefined) {
+              results = results.filter(portfolio => portfolio.isDefault === options.where?.isDefault);
+            }
+          }
+          
+          if (options.orderBy) {
+            const [key, order] = Object.entries(options.orderBy)[0];
+            results = results.sort((a, b) => {
+              if (order === 'asc') {
+                return a[key] > b[key] ? 1 : -1;
+              } else {
+                return a[key] < b[key] ? 1 : -1;
+              }
+            });
+          }
+          
+          resolve(results);
+          db.close();
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+          db.close();
+        };
+      });
+    },
+
+    async findUnique(params) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['portfolios'], 'readonly');
+        const store = transaction.objectStore('portfolios');
+        const request = store.get(params.where.id);
+        
+        request.onsuccess = () => {
+          resolve(request.result || null);
+          db.close();
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+          db.close();
+        };
+      });
+    },
+
+    async update(params) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['portfolios'], 'readwrite');
+        const store = transaction.objectStore('portfolios');
+        const getRequest = store.get(params.where.id);
+        
+        getRequest.onsuccess = () => {
+          const existingData = getRequest.result;
+          if (!existingData) {
+            reject(new Error('ポートフォリオが見つかりません'));
+            db.close();
+            return;
+          }
+          
+          const updatedData = {
+            ...existingData,
+            ...params.data,
+            updatedAt: new Date()
+          };
+          
+          const updateRequest = store.put(updatedData);
+          
+          updateRequest.onsuccess = () => {
+            resolve(updatedData);
+            db.close();
+          };
+          
+          updateRequest.onerror = () => {
+            reject(updateRequest.error);
+            db.close();
+          };
+        };
+        
+        getRequest.onerror = () => {
+          reject(getRequest.error);
+          db.close();
+        };
+      });
+    },
+
+    async create(params) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['portfolios'], 'readwrite');
+        const store = transaction.objectStore('portfolios');
+        
+        const now = new Date();
+        const portfolioData = {
+          ...params.data,
+          createdAt: now,
+          updatedAt: now
+        };
+        
+        const request = store.add(portfolioData);
+        
+        request.onsuccess = () => {
+          const newId = request.result as number;
+          resolve({ ...portfolioData, id: newId });
+          db.close();
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+          db.close();
+        };
+      });
+    },
+
+    async delete(params) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['portfolios'], 'readwrite');
+        const store = transaction.objectStore('portfolios');
+        const request = store.delete(params.where.id);
+        
+        request.onsuccess = () => {
+          resolve();
+          db.close();
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+          db.close();
+        };
+      });
+    }
+  },
+  
   stocks: {
     async findMany(options: {
+      where?: { symbol?: string, country?: Country },
       orderBy?: { [key: string]: 'asc' | 'desc' },
       include?: { [key: string]: boolean }
     } = {}) {
@@ -170,10 +442,30 @@ export const dbHelper: DbHelper = {
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(['stocks'], 'readonly');
         const store = transaction.objectStore('stocks');
-        const request = store.getAll();
+        
+        let request;
+        if (options.where?.symbol) {
+          const index = store.index('symbol');
+          request = index.getAll(options.where.symbol);
+        } else if (options.where?.country) {
+          const index = store.index('country');
+          request = index.getAll(options.where.country);
+        } else {
+          request = store.getAll();
+        }
         
         request.onsuccess = () => {
           let results = request.result;
+          
+          // 複数の条件でフィルタリング
+          if (options.where) {
+            if (options.where.symbol && options.where.country) {
+              results = results.filter(stock => stock.symbol === options.where?.symbol);
+            }
+            if (options.where.country && options.where.symbol) {
+              results = results.filter(stock => stock.country === options.where?.country);
+            }
+          }
           
           if (options.orderBy) {
             const [key, order] = Object.entries(options.orderBy)[0];
@@ -307,7 +599,7 @@ export const dbHelper: DbHelper = {
   
   purchases: {
     async findMany(options: { 
-      where?: { stockId?: number },
+      where?: { stockId?: number, portfolioId?: number },
       orderBy?: { [key: string]: 'asc' | 'desc' },
       include?: { stock?: boolean }
     } = {}): Promise<Purchase[]> {
@@ -320,12 +612,25 @@ export const dbHelper: DbHelper = {
         if (options.where?.stockId) {
           const index = purchaseStore.index('stockId');
           request = index.getAll(options.where.stockId);
+        } else if (options.where?.portfolioId) {
+          const index = purchaseStore.index('portfolioId');
+          request = index.getAll(options.where.portfolioId);
         } else {
           request = purchaseStore.getAll();
         }
         
         request.onsuccess = async () => {
           let results = request.result;
+          
+          // 複数の条件でフィルタリング
+          if (options.where) {
+            if (options.where.stockId && options.where.portfolioId) {
+              results = results.filter(purchase => 
+                purchase.stockId === options.where?.stockId && 
+                purchase.portfolioId === options.where?.portfolioId
+              );
+            }
+          }
           
           if (options.orderBy) {
             const [key, order] = Object.entries(options.orderBy)[0];
@@ -474,7 +779,7 @@ export const dbHelper: DbHelper = {
   
   dividends: {
     async findMany(options: { 
-      where?: { stockId?: number },
+      where?: { stockId?: number, portfolioId?: number },
       orderBy?: { [key: string]: 'asc' | 'desc' },
       include?: { stock?: boolean }
     } = {}): Promise<Dividend[]> {
@@ -487,12 +792,25 @@ export const dbHelper: DbHelper = {
         if (options.where?.stockId) {
           const index = dividendStore.index('stockId');
           request = index.getAll(options.where.stockId);
+        } else if (options.where?.portfolioId) {
+          const index = dividendStore.index('portfolioId');
+          request = index.getAll(options.where.portfolioId);
         } else {
           request = dividendStore.getAll();
         }
         
         request.onsuccess = async () => {
           let results = request.result;
+          
+          // 複数の条件でフィルタリング
+          if (options.where) {
+            if (options.where.stockId && options.where.portfolioId) {
+              results = results.filter(dividend => 
+                dividend.stockId === options.where?.stockId && 
+                dividend.portfolioId === options.where?.portfolioId
+              );
+            }
+          }
           
           if (options.orderBy) {
             const [key, order] = Object.entries(options.orderBy)[0];
@@ -641,20 +959,30 @@ export const dbHelper: DbHelper = {
   
   investmentFunds: {
     async findMany(options: { 
-      where?: { type?: 'deposit' | 'withdrawal' },
+      where?: { type?: 'deposit' | 'withdrawal', portfolioId?: number },
       orderBy?: { [key: string]: 'asc' | 'desc' }
     } = {}): Promise<InvestmentFund[]> {
       const db = await openDB();
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(['investmentFunds'], 'readonly');
         const store = transaction.objectStore('investmentFunds');
-        const request = store.getAll();
+        
+        let request;
+        if (options.where?.portfolioId) {
+          const index = store.index('portfolioId');
+          request = index.getAll(options.where.portfolioId);
+        } else {
+          request = store.getAll();
+        }
         
         request.onsuccess = () => {
           let results = request.result;
           
-          if (options.where?.type) {
-            results = results.filter(fund => fund.type === options.where?.type);
+          // 複数の条件でフィルタリング
+          if (options.where) {
+            if (options.where.type) {
+              results = results.filter(fund => fund.type === options.where?.type);
+            }
           }
           
           if (options.orderBy) {
@@ -786,8 +1114,8 @@ export const dbHelper: DbHelper = {
       });
     },
     
-    async getTotalFunds(): Promise<number> {
-      const funds = await this.findMany({ orderBy: { date: 'asc' } });
+    async getTotalFunds(options?: { where?: { portfolioId?: number } }): Promise<number> {
+      const funds = await this.findMany(options);
       return funds.reduce((total, fund) => {
         if (fund.type === 'deposit') {
           return total + fund.amount;
@@ -806,12 +1134,14 @@ export const dataManagement = {
     const db = await openDB();
     
     try {
+      const portfolios = await dbHelper.portfolios.findMany();
       const stocks = await dbHelper.stocks.findMany();
       const purchases = await dbHelper.purchases.findMany();
       const dividends = await dbHelper.dividends.findMany();
       const funds = await dbHelper.investmentFunds.findMany();
 
       return {
+        portfolios,
         stocks,
         purchases,
         dividends,
@@ -899,7 +1229,7 @@ export const dataManagement = {
     if (!data || typeof data !== 'object') return false;
 
     // 必須フィールドの存在チェック
-    const requiredFields = ['stocks', 'purchases', 'dividends', 'investmentFunds', 'version', 'exportDate'];
+    const requiredFields = ['portfolios', 'stocks', 'purchases', 'dividends', 'investmentFunds', 'version', 'exportDate'];
     if (!requiredFields.every(field => field in data)) return false;
 
     // バージョンチェック
@@ -908,7 +1238,7 @@ export const dataManagement = {
     }
 
     // 配列チェック
-    if (!Array.isArray(data.stocks) || !Array.isArray(data.purchases) ||
+    if (!Array.isArray(data.portfolios) || !Array.isArray(data.stocks) || !Array.isArray(data.purchases) ||
         !Array.isArray(data.dividends) || !Array.isArray(data.investmentFunds)) {
       return false;
     }
@@ -920,6 +1250,11 @@ export const dataManagement = {
   _processImportData(data: ExportData): ExportData {
     return {
       ...data,
+      portfolios: data.portfolios.map(portfolio => ({
+        ...portfolio,
+        createdAt: portfolio.createdAt ? new Date(portfolio.createdAt) : undefined,
+        updatedAt: portfolio.updatedAt ? new Date(portfolio.updatedAt) : undefined
+      })),
       stocks: data.stocks.map(stock => ({
         ...stock,
         initialPurchaseDate: stock.initialPurchaseDate ? new Date(stock.initialPurchaseDate) : undefined,

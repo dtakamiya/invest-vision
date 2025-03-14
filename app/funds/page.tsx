@@ -2,26 +2,48 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { dbHelper, InvestmentFund } from "@/app/lib/db";
+import { dbHelper, InvestmentFund, Portfolio } from "@/app/lib/db";
 import { PlusCircle, ArrowUpCircle, ArrowDownCircle, Trash2 } from "lucide-react";
 
 export default function FundsPage() {
   const [funds, setFunds] = useState<InvestmentFund[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalFunds, setTotalFunds] = useState(0);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
 
   useEffect(() => {
     const fetchFunds = async () => {
       try {
+        // 現在選択されているポートフォリオIDを取得
+        const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+        let portfolioId: number | undefined;
+        
+        if (storedPortfolioId) {
+          portfolioId = Number(storedPortfolioId);
+          
+          // 現在のポートフォリオ情報を取得
+          const portfolio = await dbHelper.portfolios.findUnique({ 
+            where: { id: portfolioId } 
+          });
+          
+          if (portfolio) {
+            setCurrentPortfolio(portfolio);
+          }
+        }
+        
+        // 選択されたポートフォリオのデータのみを取得
         const fundsData = await dbHelper.investmentFunds.findMany({
+          where: { portfolioId },
           orderBy: {
             date: 'desc',
           },
         });
         setFunds(fundsData);
         
-        // 投資資金の合計を計算
-        const total = await dbHelper.investmentFunds.getTotalFunds();
+        // 選択されたポートフォリオの投資資金の合計を計算
+        const total = await dbHelper.investmentFunds.getTotalFunds({
+          where: { portfolioId }
+        });
         setTotalFunds(total);
       } catch (error) {
         console.error('投資資金の取得に失敗しました:', error);
@@ -41,8 +63,13 @@ export default function FundsPage() {
     try {
       await dbHelper.investmentFunds.delete({ where: { id } });
       
+      // 現在選択されているポートフォリオIDを取得
+      const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+      const portfolioId = storedPortfolioId ? Number(storedPortfolioId) : undefined;
+      
       // 再取得
       const fundsData = await dbHelper.investmentFunds.findMany({
+        where: { portfolioId },
         orderBy: {
           date: 'desc',
         },
@@ -50,7 +77,9 @@ export default function FundsPage() {
       setFunds(fundsData);
       
       // 投資資金の合計を再計算
-      const total = await dbHelper.investmentFunds.getTotalFunds();
+      const total = await dbHelper.investmentFunds.getTotalFunds({
+        where: { portfolioId }
+      });
       setTotalFunds(total);
     } catch (error) {
       console.error('投資資金の削除に失敗しました:', error);
@@ -70,7 +99,14 @@ export default function FundsPage() {
     <div className="space-y-8 animate-fadeIn">
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-white">投資資金管理</h1>
+          <h1 className="text-3xl font-bold text-white">
+            投資資金管理
+            {currentPortfolio && (
+              <span className="ml-2 text-xl font-normal">
+                ({currentPortfolio.name})
+              </span>
+            )}
+          </h1>
           <div className="flex gap-2">
             <Link
               href="/funds/deposit"

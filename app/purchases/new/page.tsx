@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { dbHelper, Stock } from "@/app/lib/db";
+import { dbHelper, Stock, Portfolio } from "@/app/lib/db";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Calculator } from "lucide-react";
@@ -17,11 +17,29 @@ export default function NewPurchasePage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [totalAmount, setTotalAmount] = useState<number | null>(null);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchStocks = async () => {
+    const fetchData = async () => {
       try {
+        // 現在選択されているポートフォリオIDを取得
+        const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+        
+        if (storedPortfolioId) {
+          const portfolioId = Number(storedPortfolioId);
+          
+          // 現在のポートフォリオ情報を取得
+          const portfolio = await dbHelper.portfolios.findUnique({ 
+            where: { id: portfolioId } 
+          });
+          
+          if (portfolio) {
+            setCurrentPortfolio(portfolio);
+          }
+        }
+        
+        // 株式銘柄の取得
         const stocksData = await dbHelper.stocks.findMany({
           orderBy: {
             symbol: 'asc',
@@ -29,13 +47,13 @@ export default function NewPurchasePage() {
         });
         setStocks(stocksData);
       } catch (error) {
-        console.error('株式銘柄の取得に失敗しました:', error);
+        console.error('データの取得に失敗しました:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStocks();
+    fetchData();
   }, []);
 
   // 合計金額の計算
@@ -62,10 +80,20 @@ export default function NewPurchasePage() {
         setIsSubmitting(false);
         return;
       }
+      
+      // 現在のポートフォリオIDを取得
+      const portfolioId = currentPortfolio?.id;
+      
+      if (!portfolioId) {
+        alert("ポートフォリオが選択されていません");
+        setIsSubmitting(false);
+        return;
+      }
 
       await dbHelper.purchases.create({
         data: {
           stockId: parseInt(stockId),
+          portfolioId,
           quantity: parseInt(quantity),
           price: parseFloat(price),
           fee: parseFloat(fee),
@@ -94,7 +122,14 @@ export default function NewPurchasePage() {
     <div className="space-y-6 animate-fadeIn">
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-white">新しい購入記録を追加</h1>
+          <h1 className="text-3xl font-bold text-white">
+            新しい購入記録を追加
+            {currentPortfolio && (
+              <span className="ml-2 text-xl font-normal">
+                ({currentPortfolio.name})
+              </span>
+            )}
+          </h1>
           <Link
             href="/purchases"
             className="btn btn-sm btn-secondary flex items-center gap-2"
@@ -251,8 +286,8 @@ export default function NewPurchasePage() {
               </Link>
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className={`btn btn-primary btn-md ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                disabled={isSubmitting || !currentPortfolio}
+                className={`btn btn-primary btn-md ${(isSubmitting || !currentPortfolio) ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isSubmitting ? '保存中...' : '保存'}

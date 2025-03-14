@@ -2,16 +2,56 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { openDB, dbHelper, Stock, Purchase } from "@/app/lib/db";
+import { openDB, dbHelper, Stock, Purchase, Portfolio } from "@/app/lib/db";
 import { StockPrice, fetchMultipleStockPrices } from "@/app/lib/stockApi";
 import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
 import { toast } from 'react-hot-toast';
+import { migrateDataToDefaultPortfolio } from './actions/migrate-portfolio';
 
 interface Fund {
   id: number;
   amount: number;
   date: Date;
   notes?: string;
+}
+
+// データ移行を実行するコンポーネント
+function DataMigration() {
+  useEffect(() => {
+    const runMigration = async () => {
+      try {
+        // ローカルストレージをチェックして、既に移行済みかどうかを確認
+        const migrated = localStorage.getItem('portfolioMigrated');
+        if (migrated) {
+          console.log('データ移行は既に完了しています');
+          return;
+        }
+
+        console.log('データ移行を開始します...');
+        const result = await migrateDataToDefaultPortfolio();
+        
+        if (result.success) {
+          console.log('データ移行が完了しました');
+          // 移行完了をローカルストレージに記録
+          localStorage.setItem('portfolioMigrated', 'true');
+          if (result.portfolioId) {
+            localStorage.setItem('currentPortfolioId', String(result.portfolioId));
+          }
+        } else {
+          console.error('データ移行に失敗しました:', result.error);
+        }
+      } catch (error) {
+        console.error('データ移行中にエラーが発生しました:', error);
+      }
+    };
+
+    // ブラウザ環境でのみ実行
+    if (typeof window !== 'undefined') {
+      runMigration();
+    }
+  }, []);
+
+  return null; // UIは表示しない
 }
 
 export default function Home() {
@@ -24,6 +64,8 @@ export default function Home() {
   const [exchangeRate, setExchangeRate] = useState<{ rate: number; lastUpdated: Date }>({ rate: 150, lastUpdated: new Date() });
   const [stockQuantities, setStockQuantities] = useState<Map<number, number>>(new Map());
   const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
+  const [currentPortfolioId, setCurrentPortfolioId] = useState<number | null>(null);
 
   // 投資国ごとの評価額を計算する関数
   const calculateTotalValueByCountry = () => {
@@ -33,7 +75,12 @@ export default function Home() {
         const stockPrice = stockPrices.get(stock.symbol);
         const quantity = stockQuantities.get(stock.id as number) || 0;
         if (stockPrice && quantity > 0) {
-          return sum + (stockPrice.price * quantity);
+          // 投資信託の場合は保有口数 * 基準価格 / 10000 で計算
+          if (stock.assetType === 'fund') {
+            return sum + (stockPrice.price * quantity / 10000);
+          } else {
+            return sum + (stockPrice.price * quantity);
+          }
         }
         return sum;
       }, 0);
@@ -44,11 +91,22 @@ export default function Home() {
         const stockPrice = stockPrices.get(stock.symbol);
         const quantity = stockQuantities.get(stock.id as number) || 0;
         if (stockPrice && quantity > 0) {
-          // 通貨がUSDの場合のみ為替レートを適用
-          if (stockPrice.currency === 'USD') {
-            return sum + (stockPrice.price * quantity * exchangeRate.rate);
+          // 投資信託の場合は保有口数 * 基準価格 / 10000 で計算
+          if (stock.assetType === 'fund') {
+            // 通貨がUSDの場合のみ為替レートを適用
+            if (stockPrice.currency === 'USD') {
+              return sum + (stockPrice.price * quantity * exchangeRate.rate / 10000);
+            } else {
+              return sum + (stockPrice.price * quantity / 10000);
+            }
           } else {
-            return sum + (stockPrice.price * quantity);
+            // 株式の場合
+            // 通貨がUSDの場合のみ為替レートを適用
+            if (stockPrice.currency === 'USD') {
+              return sum + (stockPrice.price * quantity * exchangeRate.rate);
+            } else {
+              return sum + (stockPrice.price * quantity);
+            }
           }
         }
         return sum;
@@ -60,10 +118,20 @@ export default function Home() {
         const stockPrice = stockPrices.get(stock.symbol);
         const quantity = stockQuantities.get(stock.id as number) || 0;
         if (stockPrice && quantity > 0) {
-          if (stock.country === '米国' && stockPrice.currency === 'USD') {
-            return sum + (stockPrice.price * quantity * exchangeRate.rate);
+          // 投資信託の場合は保有口数 * 基準価格 / 10000 で計算
+          if (stock.assetType === 'fund') {
+            if (stock.country === '米国' && stockPrice.currency === 'USD') {
+              return sum + (stockPrice.price * quantity * exchangeRate.rate / 10000);
+            } else {
+              return sum + (stockPrice.price * quantity / 10000);
+            }
           } else {
-            return sum + (stockPrice.price * quantity);
+            // 株式の場合
+            if (stock.country === '米国' && stockPrice.currency === 'USD') {
+              return sum + (stockPrice.price * quantity * exchangeRate.rate);
+            } else {
+              return sum + (stockPrice.price * quantity);
+            }
           }
         }
         return sum;
@@ -126,7 +194,20 @@ export default function Home() {
       try {
         // 投資資金の取得
         const db = await openDB();
-        const fundsData = await dbHelper.investmentFunds.getTotalFunds();
+        
+        // 現在選択されているポートフォリオIDを取得
+        const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+        if (storedPortfolioId) {
+          setCurrentPortfolioId(Number(storedPortfolioId));
+        }
+        
+        // 現在のポートフォリオIDを取得
+        const portfolioId = storedPortfolioId ? Number(storedPortfolioId) : undefined;
+        
+        // 選択されたポートフォリオの投資資金を取得
+        const fundsData = await dbHelper.investmentFunds.getTotalFunds({
+          where: { portfolioId }
+        });
         setTotalFunds(fundsData);
 
         // 株式情報の取得
@@ -144,17 +225,36 @@ export default function Home() {
         const rate = await fetchUSDJPYRate();
         setExchangeRate(rate);
 
-        // 購入記録の取得
-        const purchasesData = await dbHelper.purchases.findMany();
-        const investment = purchasesData.reduce((sum, purchase) => sum + (purchase.price * purchase.quantity), 0);
+        // 選択されたポートフォリオの購入記録を取得
+        const purchasesData = await dbHelper.purchases.findMany({
+          where: { portfolioId }
+        });
+        
+        // 投資総額の計算（投資信託の場合は保有口数 * 基準価格 / 10000 で計算）
+        const investment = purchasesData.reduce((sum, purchase) => {
+          // 対応する株式情報を取得
+          const stock = stocksData.find(s => s.id === purchase.stockId);
+          
+          // 投資信託の場合
+          if (stock && stock.assetType === 'fund') {
+            return sum + Math.round(purchase.price * purchase.quantity / 10000);
+          } 
+          // 株式の場合
+          else {
+            return sum + (purchase.price * purchase.quantity);
+          }
+        }, 0);
+        
         setTotalInvestment(investment);
 
         // 各銘柄の所有数を計算
         const quantities = new Map<number, number>();
         for (const stock of stocksData) {
           if (stock.id !== undefined) {
-            // 銘柄IDでフィルタリング
-            const stockPurchases = purchasesData.filter(purchase => purchase.stockId === stock.id);
+            // 銘柄IDとポートフォリオIDでフィルタリング
+            const stockPurchases = purchasesData.filter(purchase => 
+              purchase.stockId === stock.id
+            );
             // 所有数を計算（購入数量の合計）
             const totalQuantity = stockPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
             quantities.set(stock.id, totalQuantity);
@@ -162,10 +262,21 @@ export default function Home() {
         }
         setStockQuantities(quantities);
 
-        // 配当金記録の取得
-        const dividendsData = await dbHelper.dividends.findMany();
+        // 選択されたポートフォリオの配当金記録を取得
+        const dividendsData = await dbHelper.dividends.findMany({
+          where: { portfolioId }
+        });
         const dividends = dividendsData.reduce((sum, dividend) => sum + dividend.amount, 0);
         setTotalDividends(dividends);
+ 
+        // 現在のポートフォリオの取得
+        if (storedPortfolioId) {
+          const portfolioIdNumber = Number(storedPortfolioId);
+          const portfolio = await dbHelper.portfolios.findUnique({
+            where: { id: portfolioIdNumber },
+          });
+          setCurrentPortfolio(portfolio);
+        }
       } catch (error) {
         console.error('データの取得に失敗しました:', error);
       } finally {
@@ -204,46 +315,46 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-12 animate-fadeIn">
+      {/* データ移行コンポーネントを追加 */}
+      <DataMigration />
+      
       {/* ヒーローセクション */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-20"></div>
-        <div className="absolute top-0 right-0 w-full h-full overflow-hidden opacity-10">
-          <svg className="absolute right-0 top-0 h-full w-full transform translate-x-1/3" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-            <path d="M316.9,174.3c71.6-31.9,111.6-100.3,90.7-152.4c-20.9-52.2-96.3-68.4-167.9-36.5C167.7,17.3,127.7,85.7,148.6,137.8
-              C169.5,190,245,206.2,316.9,174.3z" fill="rgba(255,255,255,0.6)"/>
-            <path d="M248.9,274.3c71.6-31.9,111.6-100.3,90.7-152.4c-20.9-52.2-96.3-68.4-167.9-36.5C99.7,117.3,59.7,185.7,80.6,237.8
-              C101.5,290,177,306.2,248.9,274.3z" fill="rgba(255,255,255,0.4)"/>
-          </svg>
-        </div>
-        <div className="relative z-10 px-6 py-12 sm:px-12 sm:py-16 text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight animate-fadeIn">
-            投資ビジョン
-          </h1>
-          <p className="text-xl md:text-2xl text-indigo-100 mb-8 max-w-3xl mx-auto animate-fadeIn animation-delay-300">
-            配当金の受け取りと株式購入を簡単に記録・管理できる
-            <br className="hidden sm:inline" />
-            モダンなアプリケーション
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center animate-fadeIn animation-delay-500">
-            <Link
-              href="/stocks"
-              className="btn px-6 py-3 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:translate-y-[-2px]"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-              </svg>
-              銘柄一覧を見る
-            </Link>
-            <Link
-              href="/stocks/new"
-              className="btn px-6 py-3 bg-purple-500 text-white hover:bg-purple-600 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:translate-y-[-2px]"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              新しい銘柄を追加
-            </Link>
+        <div className="relative z-10 px-8 py-12 md:px-12 md:py-20">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
+              InvestVision
+            </h1>
+            {currentPortfolio && (
+              <p className="mb-6 text-xl font-medium text-indigo-100">
+                {currentPortfolio.name}
+              </p>
+            )}
+            <p className="mb-10 text-lg text-indigo-100">
+              あなたの投資を可視化し、より良い投資判断をサポートします
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link
+                href="/stocks"
+                className="btn px-6 py-3 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:translate-y-[-2px]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                </svg>
+                銘柄一覧を見る
+              </Link>
+              <Link
+                href="/stocks/new"
+                className="btn px-6 py-3 bg-purple-500 text-white hover:bg-purple-600 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:translate-y-[-2px]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                新しい銘柄を追加
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -474,99 +585,128 @@ export default function Home() {
 
       {/* 投資概要セクション */}
       {!loading && (
-        <section className="py-6">
-          <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">投資概要</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">投資資金</h3>
-              <p className="text-xl font-bold text-blue-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds)}
-              </p>
-              <div className="mt-4">
-                <Link
-                  href="/funds"
-                  className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors flex items-center"
-                >
-                  詳細を見る
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
+        <>
+          {/* ポートフォリオ情報 */}
+          {currentPortfolio && (
+            <section className="py-4">
+              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">{currentPortfolio.name}</h2>
+                    {currentPortfolio.description && (
+                      <p className="text-gray-600 mt-1">{currentPortfolio.description}</p>
+                    )}
+                  </div>
+                  <div className="mt-4 md:mt-0">
+                    <Link
+                      href="/portfolios"
+                      className="inline-flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
+                    >
+                      ポートフォリオを変更
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 9l6 6 6-6"/>
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section className="py-6">
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">投資概要</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-medium text-gray-500 mb-2">投資資金</h3>
+                <p className="text-xl font-bold text-blue-600">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds)}
+                </p>
+                <div className="mt-4">
+                  <Link
+                    href="/funds"
+                    className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors flex items-center"
+                  >
+                    詳細を見る
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-medium text-gray-500 mb-2">投資可能額</h3>
+                <p className="text-xl font-bold text-teal-600">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds - totalInvestment + totalDividends)}
+                </p>
+                <div className="flex items-center mt-2 text-sm text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
-                </Link>
+                  投資資金 - 投資総額 + 配当金
+                </div>
               </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">投資可能額</h3>
-              <p className="text-xl font-bold text-teal-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds - totalInvestment + totalDividends)}
-              </p>
-              <div className="flex items-center mt-2 text-sm text-gray-500">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                投資資金 - 投資総額 + 配当金
+              
+              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-medium text-gray-500 mb-2">投資総額</h3>
+                <p className="text-xl font-bold text-green-600">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalInvestment)}
+                </p>
+                <div className="mt-4">
+                  <Link
+                    href="/purchases"
+                    className="text-green-600 text-sm font-medium hover:text-green-800 transition-colors flex items-center"
+                  >
+                    詳細を見る
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                  </Link>
+                </div>
               </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">投資総額</h3>
-              <p className="text-xl font-bold text-green-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalInvestment)}
-              </p>
-              <div className="mt-4">
-                <Link
-                  href="/purchases"
-                  className="text-green-600 text-sm font-medium hover:text-green-800 transition-colors flex items-center"
-                >
-                  詳細を見る
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
+              
+              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-medium text-gray-500 mb-2">配当金合計</h3>
+                <p className="text-xl font-bold text-amber-600">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalDividends)}
+                </p>
+                <div className="mt-4">
+                  <Link
+                    href="/dividends"
+                    className="text-amber-600 text-sm font-medium hover:text-amber-800 transition-colors flex items-center"
+                  >
+                    詳細を見る
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-medium text-gray-500 mb-2">投資利回り</h3>
+                <p className="text-xl font-bold text-purple-600">
+                  {totalInvestment > 0 
+                    ? `${((totalDividends / totalInvestment) * 100).toFixed(2)}%` 
+                    : '0.00%'}
+                </p>
+                <div className="flex items-center mt-2 text-sm text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
-                </Link>
+                  配当金 ÷ 投資総額
+                </div>
               </div>
             </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">配当金合計</h3>
-              <p className="text-xl font-bold text-amber-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalDividends)}
-              </p>
-              <div className="mt-4">
-                <Link
-                  href="/dividends"
-                  className="text-amber-600 text-sm font-medium hover:text-amber-800 transition-colors flex items-center"
-                >
-                  詳細を見る
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                </Link>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <h3 className="text-lg font-medium text-gray-500 mb-2">投資利回り</h3>
-              <p className="text-xl font-bold text-purple-600">
-                {totalInvestment > 0 
-                  ? `${((totalDividends / totalInvestment) * 100).toFixed(2)}%` 
-                  : '0.00%'}
-              </p>
-              <div className="flex items-center mt-2 text-sm text-gray-500">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                配当金 ÷ 投資総額
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        </>
       )}
 
       {/* 機能紹介セクション */}
@@ -873,7 +1013,7 @@ export default function Home() {
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
                 設定ページへ
               </Link>

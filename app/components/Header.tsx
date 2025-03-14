@@ -1,14 +1,65 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { dbHelper, Portfolio } from '@/app/lib/db';
 
 export default function Header() {
   const pathname = usePathname();
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // 現在のパスがアクティブかどうかを判定する関数
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(path + '/');
+  };
+
+  // ポートフォリオの取得
+  useEffect(() => {
+    const fetchPortfolios = async () => {
+      try {
+        setIsLoading(true);
+        const portfoliosData = await dbHelper.portfolios.findMany();
+        setPortfolios(portfoliosData);
+        
+        // 現在選択されているポートフォリオIDを取得
+        const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+        if (storedPortfolioId && portfoliosData.length > 0) {
+          const currentId = Number(storedPortfolioId);
+          const current = portfoliosData.find(p => p.id === currentId);
+          if (current) {
+            setCurrentPortfolio(current);
+          } else {
+            // 保存されているIDが見つからない場合は最初のポートフォリオを選択
+            setCurrentPortfolio(portfoliosData[0]);
+            localStorage.setItem('currentPortfolioId', String(portfoliosData[0].id));
+          }
+        } else if (portfoliosData.length > 0) {
+          // ポートフォリオIDが保存されていない場合は最初のポートフォリオを選択
+          setCurrentPortfolio(portfoliosData[0]);
+          localStorage.setItem('currentPortfolioId', String(portfoliosData[0].id));
+        }
+      } catch (error) {
+        console.error('ポートフォリオの取得中にエラーが発生しました:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPortfolios();
+  }, []);
+
+  // ポートフォリオの選択
+  const selectPortfolio = (portfolio: Portfolio) => {
+    setCurrentPortfolio(portfolio);
+    localStorage.setItem('currentPortfolioId', String(portfolio.id));
+    setIsDropdownOpen(false);
+    
+    // ページをリロードして選択したポートフォリオのデータを表示
+    window.location.reload();
   };
   
   return (
@@ -19,6 +70,74 @@ export default function Header() {
             <Link href="/" className="text-xl font-bold text-gray-800">
               InvestVision
             </Link>
+            
+            {/* ポートフォリオ選択ドロップダウン */}
+            <div className="relative ml-4">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center px-3 py-2 bg-gray-100 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                </svg>
+                {isLoading ? (
+                  <span>読み込み中...</span>
+                ) : currentPortfolio ? (
+                  <span>{currentPortfolio.name}</span>
+                ) : (
+                  <span>ポートフォリオなし</span>
+                )}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10">
+                  <div className="py-1">
+                    {portfolios.length > 0 ? (
+                      <>
+                        {portfolios.map((portfolio) => (
+                          <button
+                            key={portfolio.id}
+                            onClick={() => selectPortfolio(portfolio)}
+                            className={`block w-full text-left px-4 py-2 text-sm ${
+                              currentPortfolio?.id === portfolio.id
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {portfolio.name}
+                          </button>
+                        ))}
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <Link
+                          href="/portfolios"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          ポートフォリオ管理
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <div className="px-4 py-2 text-sm text-gray-500">
+                          ポートフォリオがありません
+                        </div>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <Link
+                          href="/portfolios"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          ポートフォリオ管理
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             
             {/* モバイル用メニューボタン（実装は省略） */}
           </div>

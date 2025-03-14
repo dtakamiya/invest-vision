@@ -9,6 +9,7 @@ export default function NewStockPage() {
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
   const [country, setCountry] = useState<Country>("日本");
+  const [assetType, setAssetType] = useState<'stock' | 'fund'>('stock');
   const [initialPurchaseDate, setInitialPurchaseDate] = useState("");
   const [initialQuantity, setInitialQuantity] = useState("");
   const [initialPrice, setInitialPrice] = useState("");
@@ -33,6 +34,7 @@ export default function NewStockPage() {
           symbol,
           name,
           country,
+          assetType,
           initialPurchaseDate: initialPurchaseDate ? new Date(initialPurchaseDate) : undefined,
           initialQuantity: initialQuantity ? parseInt(initialQuantity) : undefined,
           initialPrice: initialPrice ? parseFloat(initialPrice) : undefined,
@@ -78,75 +80,117 @@ export default function NewStockPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800">新しい銘柄を追加</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">新しい銘柄を追加</h1>
         <Link
           href="/stocks"
-          className="text-blue-600 hover:underline"
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
         >
-          ← 銘柄一覧に戻る
+          キャンセル
         </Link>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">基本情報</h2>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="symbol" className="block text-sm font-medium text-gray-700 mb-1">
-                  銘柄コード
-                </label>
-                <input
-                  type="text"
-                  id="symbol"
-                  value={symbol}
-                  onChange={(e) => setSymbol(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="例: 7203"
-                />
-              </div>
+      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="symbol" className="block text-sm font-medium text-gray-700 mb-1">
+                銘柄コード <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="symbol"
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="例: 7203（トヨタ）、AAPL（アップル）"
+                required
+              />
+            </div>
 
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  銘柄名
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="例: トヨタ自動車"
-                />
-              </div>
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                銘柄名 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="例: トヨタ自動車、Apple Inc."
+                required
+              />
+            </div>
 
-              <div>
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                  投資国
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                投資国 <span className="text-red-500">*</span>
+              </label>
+              <div className="flex space-x-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="country"
+                    value="日本"
+                    checked={country === "日本"}
+                    onChange={() => setCountry("日本")}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-gray-700">日本</span>
                 </label>
-                <select
-                  id="country"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value as Country)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="日本">日本</option>
-                  <option value="米国">米国</option>
-                </select>
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="country"
+                    value="米国"
+                    checked={country === "米国"}
+                    onChange={() => setCountry("米国")}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-gray-700">米国</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                資産タイプ <span className="text-red-500">*</span>
+              </label>
+              <div className="flex space-x-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="assetType"
+                    value="stock"
+                    checked={assetType === "stock"}
+                    onChange={() => setAssetType("stock")}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-gray-700">株式</span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="assetType"
+                    value="fund"
+                    checked={assetType === "fund"}
+                    onChange={() => setAssetType("fund")}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-gray-700">投資信託</span>
+                </label>
               </div>
             </div>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">初期購入情報（任意）</h2>
+          <div className="border-t border-gray-200 pt-4">
+            <h2 className="text-lg font-medium text-gray-800 mb-4">初期購入情報（任意）</h2>
             <p className="text-sm text-gray-500 mb-4">
-              初期購入情報を入力すると、購入記録も自動的に作成されます。
+              初期購入情報を入力すると、購入記録が自動的に作成されます。
             </p>
+
             <div className="space-y-4">
               <div>
                 <label htmlFor="initialPurchaseDate" className="block text-sm font-medium text-gray-700 mb-1">
@@ -195,19 +239,15 @@ export default function NewStockPage() {
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Link
-              href="/stocks"
-              className="btn btn-outline btn-md"
-            >
-              キャンセル
-            </Link>
+          <div className="flex justify-end">
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`btn btn-primary btn-md ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`px-6 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
-              {isSubmitting ? '保存中...' : '保存'}
+              {isSubmitting ? "保存中..." : "保存"}
             </button>
           </div>
         </form>

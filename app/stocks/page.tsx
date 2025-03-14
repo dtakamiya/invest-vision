@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { dbHelper, Stock, Purchase } from "@/app/lib/db";
+import { dbHelper, Stock, Purchase, Portfolio } from "@/app/lib/db";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchMultipleStockPrices, StockPrice } from "@/app/lib/stockApi";
+import { fetchMultipleFundPrices, FundPrice } from "@/app/lib/fundApi";
 import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
 import { toast } from 'react-hot-toast';
 
@@ -12,9 +13,19 @@ import { toast } from 'react-hot-toast';
 function calculateValue(
   stock: Stock,
   stockPrice: StockPrice | undefined,
+  fundPrice: FundPrice | undefined,
   exchangeRate: { rate: number; lastUpdated: Date },
   quantity: number
 ): { value: number | null; currency: string } {
+  // 投資信託の場合
+  if (stock.assetType === 'fund' && fundPrice) {
+    return {
+      value: Math.round(fundPrice.price * quantity / 10000),
+      currency: '円'
+    };
+  }
+  
+  // 株式の場合
   if (!stockPrice || quantity === 0) return { value: null, currency: '円' };
   
   // USDの場合、為替レートを適用
@@ -34,11 +45,13 @@ function calculateValue(
 export default function StocksPage() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [stockPrices, setStockPrices] = useState<Map<string, StockPrice>>(new Map());
+  const [fundPrices, setFundPrices] = useState<Map<string, FundPrice>>(new Map());
   const [loading, setLoading] = useState(true);
   const [priceLoading, setPriceLoading] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<{ rate: number; lastUpdated: Date }>({ rate: 150, lastUpdated: new Date() });
   const [stockQuantities, setStockQuantities] = useState<Map<number, number>>(new Map());
   const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
   const router = useRouter();
 
   // 10分おきに為替レートを更新
@@ -66,6 +79,24 @@ export default function StocksPage() {
   useEffect(() => {
     const fetchStocks = async () => {
       try {
+        // 現在選択されているポートフォリオIDを取得
+        const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+        let portfolioId: number | undefined;
+        
+        if (storedPortfolioId) {
+          portfolioId = Number(storedPortfolioId);
+          
+          // 現在のポートフォリオ情報を取得
+          const portfolio = await dbHelper.portfolios.findUnique({ 
+            where: { id: portfolioId } 
+          });
+          
+          if (portfolio) {
+            setCurrentPortfolio(portfolio);
+          }
+        }
+        
+        // 全ての銘柄を取得
         const stocksData = await dbHelper.stocks.findMany({
           orderBy: {
             symbol: 'asc',
@@ -73,22 +104,65 @@ export default function StocksPage() {
         });
         setStocks(stocksData);
         
-        // 株価情報を取得
+        // 株価情報と投資信託基準価格を取得
         if (stocksData.length > 0) {
           setPriceLoading(true);
-          const symbols = stocksData.map(stock => stock.symbol);
-          const prices = await fetchMultipleStockPrices(symbols);
-          setStockPrices(prices);
           
-          // 各銘柄の所有数を計算
+          // 株式と投資信託に分ける
+          const stockSymbols: string[] = [];
+          const fundSymbols: string[] = [];
+          
+          stocksData.forEach(stock => {
+            if (stock.assetType === 'fund') {
+              fundSymbols.push(stock.symbol);
+            } else {
+              stockSymbols.push(stock.symbol);
+            }
+          });
+          
+          console.log('銘柄一覧: 株式と投資信託に分類', { 
+            stocks: stockSymbols.length, 
+            funds: fundSymbols.length,
+            fundSymbols
+          });
+          
+          // 株価情報を取得
+          if (stockSymbols.length > 0) {
+            try {
+              const prices = await fetchMultipleStockPrices(stockSymbols);
+              setStockPrices(prices);
+              console.log(`株価情報取得完了: ${prices.size}件`);
+            } catch (error) {
+              console.error('株価情報の取得中にエラーが発生しました:', error);
+            }
+          }
+          
+          // 投資信託基準価格を取得
+          if (fundSymbols.length > 0) {
+            try {
+              console.log('投資信託基準価格の取得を開始:', fundSymbols);
+              const prices = await fetchMultipleFundPrices(fundSymbols);
+              console.log('投資信託基準価格の取得結果:', { 
+                取得成功: prices.size, 
+                取得失敗: fundSymbols.length - prices.size,
+                取得したシンボル: Array.from(prices.keys())
+              });
+              setFundPrices(prices);
+            } catch (error) {
+              console.error('投資信託基準価格の取得中にエラーが発生しました:', error);
+            }
+          }
+          
+          // 各銘柄の所有数を計算（選択されたポートフォリオのみ）
           const quantities = new Map<number, number>();
           
+          // 選択されたポートフォリオの購入記録を取得
+          const purchases = await dbHelper.purchases.findMany({
+            where: { portfolioId },
+            orderBy: { purchaseDate: 'desc' }
+          }) as Purchase[];
+          
           for (const stock of stocksData) {
-            // 購入記録を取得
-            const purchases = await dbHelper.purchases.findMany({
-              orderBy: { purchaseDate: 'desc' }
-            }) as Purchase[];
-            
             // 銘柄IDでフィルタリング
             const stockPurchases = purchases.filter(purchase => purchase.stockId === stock.id);
             
@@ -118,13 +192,60 @@ export default function StocksPage() {
     
     try {
       setPriceLoading(true);
-      const symbols = stocks.map(stock => stock.symbol);
-      const prices = await fetchMultipleStockPrices(symbols);
-      setStockPrices(prices);
+      
+      // 株式と投資信託に分ける
+      const stockSymbols: string[] = [];
+      const fundSymbols: string[] = [];
+      
+      stocks.forEach(stock => {
+        if (stock.assetType === 'fund') {
+          fundSymbols.push(stock.symbol);
+        } else {
+          stockSymbols.push(stock.symbol);
+        }
+      });
+      
+      console.log('株価更新: 株式と投資信託に分類', { 
+        stocks: stockSymbols.length, 
+        funds: fundSymbols.length,
+        fundSymbols
+      });
+      
+      // 株価情報を取得
+      if (stockSymbols.length > 0) {
+        try {
+          const prices = await fetchMultipleStockPrices(stockSymbols);
+          setStockPrices(prices);
+          console.log(`株価情報更新完了: ${prices.size}件`);
+        } catch (error) {
+          console.error('株価情報の更新中にエラーが発生しました:', error);
+        }
+      }
+      
+      // 投資信託基準価格を取得
+      if (fundSymbols.length > 0) {
+        try {
+          console.log('投資信託基準価格の更新を開始:', fundSymbols);
+          const prices = await fetchMultipleFundPrices(fundSymbols);
+          console.log('投資信託基準価格の更新結果:', { 
+            更新成功: prices.size, 
+            更新失敗: fundSymbols.length - prices.size,
+            更新したシンボル: Array.from(prices.keys())
+          });
+          setFundPrices(prices);
+        } catch (error) {
+          console.error('投資信託基準価格の更新中にエラーが発生しました:', error);
+        }
+      }
       
       // 為替レートも更新
-      const rate = await fetchUSDJPYRate();
-      setExchangeRate(rate);
+      try {
+        const rate = await fetchUSDJPYRate();
+        setExchangeRate(rate);
+        console.log('為替レート更新完了:', rate);
+      } catch (error) {
+        console.error('為替レートの更新中にエラーが発生しました:', error);
+      }
     } catch (error) {
       console.error('株価情報の更新に失敗しました:', error);
     } finally {
@@ -176,7 +297,14 @@ export default function StocksPage() {
     <div className="space-y-8 animate-fadeIn">
       <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-xl p-6 shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-white">銘柄一覧</h1>
+          <h1 className="text-3xl font-bold text-white">
+            銘柄一覧
+            {currentPortfolio && (
+              <span className="ml-2 text-xl font-normal">
+                (所有数: {currentPortfolio.name})
+              </span>
+            )}
+          </h1>
           <div className="flex gap-2">
             <button
               onClick={refreshPrices}
@@ -257,6 +385,12 @@ export default function StocksPage() {
                     scope="col"
                     className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
                   >
+                    資産タイプ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                  >
                     現在値
                   </th>
                   <th
@@ -294,6 +428,7 @@ export default function StocksPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {stocks.map((stock: Stock) => {
                   const stockPrice = stockPrices.get(stock.symbol);
+                  const fundPrice = fundPrices.get(stock.symbol);
                   return (
                     <tr key={stock.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -310,83 +445,133 @@ export default function StocksPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {stockPrice ? (
-                          <div className="space-y-1">
-                            <div className="font-bold text-gray-800">
-                              {stockPrice.price.toLocaleString()} {stockPrice.currency}
+                        <span className={`px-2 py-1 rounded ${stock.assetType === 'stock' ? 'bg-green-50 text-green-700' : 'bg-purple-50 text-purple-700'}`}>
+                          {stock.assetType === 'stock' ? '株式' : '投資信託'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {stock.assetType === 'fund' ? (
+                          // 投資信託の場合
+                          fundPrices.get(stock.symbol) ? (
+                            <div className="space-y-1">
+                              <div className="font-bold text-gray-800">
+                                {fundPrices.get(stock.symbol)?.price.toLocaleString()} 円
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                更新: {fundPrices.get(stock.symbol)?.lastUpdated.toLocaleString('ja-JP')}
+                                <span className="ml-1 text-green-600 inline-flex items-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                  </svg>
+                                </span>
+                              </div>
                             </div>
-                            <div className={`flex items-center ${stockPrice.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                {stockPrice.change >= 0 ? (
-                                  <polyline points="18 15 12 9 6 15"></polyline>
-                                ) : (
-                                  <polyline points="6 9 12 15 18 9"></polyline>
-                                )}
+                          ) : priceLoading ? (
+                            <div className="flex items-center text-gray-500">
+                              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              {stockPrice.change.toLocaleString()} ({stockPrice.changePercent.toFixed(2)}%)
+                              読み込み中...
                             </div>
-                            <div className="text-xs text-gray-500">
-                              更新: {stockPrice.lastUpdated.toLocaleString('ja-JP')}
-                              <span className="ml-1 text-green-600 inline-flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                                </svg>
-                              </span>
-                            </div>
-                          </div>
-                        ) : priceLoading ? (
-                          <div className="flex items-center text-gray-500">
-                            <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            読み込み中...
-                          </div>
+                          ) : (
+                            <span className="text-gray-400 italic">取得できませんでした</span>
+                          )
                         ) : (
-                          <span className="text-gray-400 italic">取得できませんでした</span>
+                          // 株式の場合
+                          stockPrice ? (
+                            <div className="space-y-1">
+                              <div className="font-bold text-gray-800">
+                                {stockPrice.price.toLocaleString()} {stockPrice.currency}
+                              </div>
+                              <div className={`flex items-center ${stockPrice.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  {stockPrice.change >= 0 ? (
+                                    <polyline points="18 15 12 9 6 15"></polyline>
+                                  ) : (
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                  )}
+                                </svg>
+                                {stockPrice.change.toLocaleString()} ({stockPrice.changePercent.toFixed(2)}%)
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                更新: {stockPrice.lastUpdated.toLocaleString('ja-JP')}
+                                <span className="ml-1 text-green-600 inline-flex items-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                  </svg>
+                                </span>
+                              </div>
+                            </div>
+                          ) : priceLoading ? (
+                            <div className="flex items-center text-gray-500">
+                              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              読み込み中...
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 italic">取得できませんでした</span>
+                          )
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {stockPrice ? (
+                        {stock.assetType === 'fund' ? (
+                          // 投資信託の場合
                           <div className="font-bold text-gray-800">
                             {calculateValue(
                               stock, 
-                              stockPrice, 
+                              undefined,
+                              fundPrices.get(stock.symbol),
                               exchangeRate, 
                               stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
                             ).value?.toLocaleString()} 円
-                            {stockPrice.currency === 'USD' && (
-                              <div className="text-xs text-gray-500">
-                                （為替レート: {exchangeRate.rate.toFixed(2)}円/$）
-                                <div className="flex items-center">
-                                  <span>更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP')}</span>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      updateExchangeRateManually();
-                                    }}
-                                    disabled={exchangeRateLoading}
-                                    className="ml-2 p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors"
-                                    title="為替レートを手動更新"
-                                  >
-                                    {exchangeRateLoading ? (
-                                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                      </svg>
-                                    ) : (
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                                      </svg>
-                                    )}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         ) : (
-                          <span className="text-gray-400 italic">-</span>
+                          // 株式の場合
+                          stockPrice ? (
+                            <div className="font-bold text-gray-800">
+                              {calculateValue(
+                                stock, 
+                                stockPrice,
+                                undefined,
+                                exchangeRate, 
+                                stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
+                              ).value?.toLocaleString()} 円
+                              {stockPrice.currency === 'USD' && (
+                                <div className="text-xs text-gray-500">
+                                  （為替レート: {exchangeRate.rate.toFixed(2)}円/$）
+                                  <div className="flex items-center">
+                                    <span>更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP')}</span>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        updateExchangeRateManually();
+                                      }}
+                                      disabled={exchangeRateLoading}
+                                      className="ml-2 p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors"
+                                      title="為替レートを手動更新"
+                                    >
+                                      {exchangeRateLoading ? (
+                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                      ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                        </svg>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 italic">-</span>
+                          )
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">

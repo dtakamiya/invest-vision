@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { dbHelper, Purchase, Stock } from "@/app/lib/db";
+import { dbHelper, Purchase, Stock, Portfolio } from "@/app/lib/db";
 import { useEffect, useState } from "react";
 
 type PurchaseWithStock = Purchase & {
@@ -13,11 +13,31 @@ export default function PurchasesPage() {
   const [loading, setLoading] = useState(true);
   const [totalInvestment, setTotalInvestment] = useState(0);
   const [totalFees, setTotalFees] = useState(0);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
 
   useEffect(() => {
     const fetchPurchases = async () => {
       try {
+        // 現在選択されているポートフォリオIDを取得
+        const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+        let portfolioId: number | undefined;
+        
+        if (storedPortfolioId) {
+          portfolioId = Number(storedPortfolioId);
+          
+          // 現在のポートフォリオ情報を取得
+          const portfolio = await dbHelper.portfolios.findUnique({ 
+            where: { id: portfolioId } 
+          });
+          
+          if (portfolio) {
+            setCurrentPortfolio(portfolio);
+          }
+        }
+        
+        // 選択されたポートフォリオのデータのみを取得
         const purchasesData = await dbHelper.purchases.findMany({
+          where: { portfolioId },
           include: {
             stock: true,
           },
@@ -29,7 +49,14 @@ export default function PurchasesPage() {
         setPurchases(purchasesData);
         
         // 購入金額の合計を計算
-        const investment = purchasesData.reduce((sum, purchase) => sum + (purchase.price * purchase.quantity), 0);
+        const investment = purchasesData.reduce((sum, purchase) => {
+          // 投資信託の場合は数量*単価/10000で計算
+          if (purchase.stock.assetType === 'fund') {
+            return sum + Math.round(purchase.price * purchase.quantity / 10000);
+          }
+          // 株式の場合は数量*単価で計算
+          return sum + (purchase.price * purchase.quantity);
+        }, 0);
         setTotalInvestment(investment);
         
         // 手数料の合計を計算
@@ -57,7 +84,14 @@ export default function PurchasesPage() {
     <div className="space-y-8 animate-fadeIn">
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-white">株式購入記録</h1>
+          <h1 className="text-3xl font-bold text-white">
+            株式購入記録
+            {currentPortfolio && (
+              <span className="ml-2 text-xl font-normal">
+                ({currentPortfolio.name})
+              </span>
+            )}
+          </h1>
           <Link
             href="/purchases/new"
             className="btn btn-sm btn-secondary flex items-center gap-2"
@@ -182,7 +216,10 @@ export default function PurchasesPage() {
                         </div>
                       </td>
                       <td className="table-cell">
-                        <span className="text-sm text-foreground">{purchase.quantity.toLocaleString()}株</span>
+                        <span className="text-sm text-foreground">
+                          {purchase.quantity.toLocaleString()}
+                          {purchase.stock.assetType === 'fund' ? '口' : '株'}
+                        </span>
                       </td>
                       <td className="table-cell">
                         <span className="text-sm text-foreground">{purchase.price.toLocaleString()}円</span>
@@ -193,7 +230,11 @@ export default function PurchasesPage() {
                             <line x1="12" y1="1" x2="12" y2="23"></line>
                             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                           </svg>
-                          <span className="text-sm font-medium text-foreground">{totalAmount.toLocaleString()}円</span>
+                          <span className="text-sm font-medium text-foreground">
+                            {purchase.stock.assetType === 'fund' 
+                              ? Math.round(purchase.quantity * purchase.price / 10000).toLocaleString()
+                              : totalAmount.toLocaleString()}円
+                          </span>
                         </div>
                       </td>
                       <td className="table-cell">

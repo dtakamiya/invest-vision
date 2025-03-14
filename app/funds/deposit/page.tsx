@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { dbHelper } from "@/app/lib/db";
+import { dbHelper, Portfolio } from "@/app/lib/db";
 import { ArrowLeft, Save } from "lucide-react";
 
 export default function DepositPage() {
@@ -11,7 +11,32 @@ export default function DepositPage() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
   const router = useRouter();
+
+  // 現在のポートフォリオを取得
+  useEffect(() => {
+    const fetchCurrentPortfolio = async () => {
+      const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+      
+      if (storedPortfolioId) {
+        try {
+          const portfolioId = Number(storedPortfolioId);
+          const portfolio = await dbHelper.portfolios.findUnique({ 
+            where: { id: portfolioId } 
+          });
+          
+          if (portfolio) {
+            setCurrentPortfolio(portfolio);
+          }
+        } catch (error) {
+          console.error('ポートフォリオの取得中にエラーが発生しました:', error);
+        }
+      }
+    };
+    
+    fetchCurrentPortfolio();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,12 +49,22 @@ export default function DepositPage() {
         return;
       }
 
+      // 現在のポートフォリオIDを取得
+      const portfolioId = currentPortfolio?.id;
+      
+      if (!portfolioId) {
+        alert("ポートフォリオが選択されていません");
+        setIsSubmitting(false);
+        return;
+      }
+
       await dbHelper.investmentFunds.create({
         data: {
           amount: parseFloat(amount),
           date: new Date(date),
           description: description || undefined,
-          type: 'deposit'
+          type: 'deposit',
+          portfolioId
         }
       });
 
@@ -45,7 +80,14 @@ export default function DepositPage() {
     <div className="space-y-6 animate-fadeIn">
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-white">入金を記録</h1>
+          <h1 className="text-3xl font-bold text-white">
+            入金を記録
+            {currentPortfolio && (
+              <span className="ml-2 text-xl font-normal">
+                ({currentPortfolio.name})
+              </span>
+            )}
+          </h1>
           <Link
             href="/funds"
             className="btn btn-sm btn-secondary flex items-center gap-2"
@@ -114,8 +156,8 @@ export default function DepositPage() {
             </Link>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`btn btn-primary btn-md ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              disabled={isSubmitting || !currentPortfolio}
+              className={`btn btn-primary btn-md ${(isSubmitting || !currentPortfolio) ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               <Save className="w-4 h-4 mr-2" />
               {isSubmitting ? '保存中...' : '保存'}

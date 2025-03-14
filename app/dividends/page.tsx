@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { dbHelper, Dividend, Stock } from "@/app/lib/db";
+import { dbHelper, Dividend, Stock, Portfolio } from "@/app/lib/db";
 import { useEffect, useState } from "react";
 
 type DividendWithStock = Dividend & {
@@ -12,11 +12,31 @@ export default function DividendsPage() {
   const [dividends, setDividends] = useState<DividendWithStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalDividends, setTotalDividends] = useState(0);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
 
   useEffect(() => {
     const fetchDividends = async () => {
       try {
+        // 現在選択されているポートフォリオIDを取得
+        const storedPortfolioId = localStorage.getItem('currentPortfolioId');
+        let portfolioId: number | undefined;
+        
+        if (storedPortfolioId) {
+          portfolioId = Number(storedPortfolioId);
+          
+          // 現在のポートフォリオ情報を取得
+          const portfolio = await dbHelper.portfolios.findUnique({ 
+            where: { id: portfolioId } 
+          });
+          
+          if (portfolio) {
+            setCurrentPortfolio(portfolio);
+          }
+        }
+        
+        // 選択されたポートフォリオのデータのみを取得
         const dividendsData = await dbHelper.dividends.findMany({
+          where: { portfolioId },
           include: {
             stock: true,
           },
@@ -52,7 +72,14 @@ export default function DividendsPage() {
     <div className="space-y-8 animate-fadeIn">
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-white">配当金記録</h1>
+          <h1 className="text-3xl font-bold text-white">
+            配当金記録
+            {currentPortfolio && (
+              <span className="ml-2 text-xl font-normal">
+                ({currentPortfolio.name})
+              </span>
+            )}
+          </h1>
           <Link
             href="/dividends/new"
             className="btn btn-sm btn-secondary flex items-center gap-2"
