@@ -10,6 +10,9 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+// アプリケーションのバージョン情報
+const APP_VERSION = '0.1.0';
+
 export const metadata: Metadata = {
   title: "投資ビジョン - 配当金・株式購入記録アプリ",
   description: "配当金の受け取りと株式購入を記録・管理するアプリケーション",
@@ -55,6 +58,7 @@ export default function RootLayout({
             </div>
             <div className="border-t border-gray-700 mt-8 pt-6 text-center text-sm">
               <p>© {new Date().getFullYear()} 投資ビジョン - 配当金・株式購入記録アプリ</p>
+              <p className="mt-2 text-gray-400">バージョン {APP_VERSION}</p>
             </div>
           </div>
         </footer>
