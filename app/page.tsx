@@ -264,8 +264,8 @@ export default function Home() {
                 <div className="text-indigo-600 font-medium">登録銘柄数</div>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200 hover:shadow-md transition-all">
-                <div className="text-xl font-bold text-purple-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(calculateTotalValueByCountry().total)}
+                <div className="text-lg font-bold text-purple-700">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0, notation: 'compact' }).format(calculateTotalValueByCountry().total)}
                 </div>
                 <div className="text-purple-600 font-medium">評価額合計</div>
                 {totalInvestment > 0 && (
@@ -276,14 +276,14 @@ export default function Home() {
                 )}
               </div>
               <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 hover:shadow-md transition-all">
-                <div className="text-xl font-bold text-green-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalInvestment)}
+                <div className="text-lg font-bold text-green-700">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0, notation: 'compact' }).format(totalInvestment)}
                 </div>
                 <div className="text-green-600 font-medium">投資総額</div>
               </div>
               <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200 hover:shadow-md transition-all">
-                <div className="text-xl font-bold text-amber-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(totalDividends)}
+                <div className="text-lg font-bold text-amber-700">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0, notation: 'compact' }).format(totalDividends)}
                 </div>
                 <div className="text-amber-600 font-medium">配当金合計</div>
                 {totalInvestment > 0 && (
@@ -316,8 +316,8 @@ export default function Home() {
                             }}
                           ></div>
                           <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-lg font-bold text-gray-800">
-                              {calculateTotalValueByCountry().total.toLocaleString()}円
+                            <span className="text-sm font-bold text-gray-800">
+                              {new Intl.NumberFormat('ja-JP', { notation: 'compact' }).format(calculateTotalValueByCountry().total)}円
                             </span>
                           </div>
                         </>
@@ -331,14 +331,14 @@ export default function Home() {
                       <div className="w-4 h-4 bg-red-500 rounded-sm"></div>
                       <span className="text-gray-700">日本株 ({Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
                       <span className="ml-2 font-semibold text-gray-900">
-                        {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().japanTotal)}
+                        {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().japanTotal)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-blue-500 rounded-sm"></div>
                       <span className="text-gray-700">米国株 ({Math.round((calculateTotalValueByCountry().usTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
                       <span className="ml-2 font-semibold text-gray-900">
-                        {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().usTotal)}
+                        {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().usTotal)}
                       </span>
                     </div>
                     <div className="mt-2 pt-2 border-t border-gray-100 text-xs">
@@ -386,22 +386,22 @@ export default function Home() {
               <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <h3 className="text-lg font-medium text-gray-500 mb-2">評価額合計</h3>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().total)}
+                  <p className="text-xl font-bold text-purple-600">
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().total)}
                   </p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <h3 className="text-lg font-medium text-gray-500 mb-2">日本株評価額</h3>
-                  <p className="text-2xl font-bold text-red-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().japanTotal)}
+                  <p className="text-xl font-bold text-red-600">
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().japanTotal)}
                   </p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <h3 className="text-lg font-medium text-gray-500 mb-2">米国株評価額</h3>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(calculateTotalValueByCountry().usTotal)}
+                  <p className="text-xl font-bold text-blue-600">
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().usTotal)}
                   </p>
                   {exchangeRate && (
                     <p className="text-xs text-gray-500 mt-1">
@@ -424,8 +424,8 @@ export default function Home() {
                             <span className="text-sm text-gray-600">追加購入推奨：</span>
                             <span className={`text-lg font-bold ${targetColor}`}>{targetCountry}</span>
                           </div>
-                          <p className="text-3xl font-bold text-green-600">
-                            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(difference)}
+                          <p className="text-xl font-bold text-green-600">
+                            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(difference)}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
                             ※売却せず追加購入のみの提案です
@@ -479,8 +479,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
               <h3 className="text-lg font-medium text-gray-500 mb-2">投資資金</h3>
-              <p className="text-3xl font-bold text-blue-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(totalFunds)}
+              <p className="text-xl font-bold text-blue-600">
+                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds)}
               </p>
               <div className="mt-4">
                 <Link
@@ -498,8 +498,8 @@ export default function Home() {
             
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
               <h3 className="text-lg font-medium text-gray-500 mb-2">投資可能額</h3>
-              <p className="text-2xl font-bold text-teal-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(totalFunds - totalInvestment + totalDividends)}
+              <p className="text-xl font-bold text-teal-600">
+                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds - totalInvestment + totalDividends)}
               </p>
               <div className="flex items-center mt-2 text-sm text-gray-500">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -513,8 +513,8 @@ export default function Home() {
             
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
               <h3 className="text-lg font-medium text-gray-500 mb-2">投資総額</h3>
-              <p className="text-3xl font-bold text-green-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(totalInvestment)}
+              <p className="text-xl font-bold text-green-600">
+                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalInvestment)}
               </p>
               <div className="mt-4">
                 <Link
@@ -532,8 +532,8 @@ export default function Home() {
             
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
               <h3 className="text-lg font-medium text-gray-500 mb-2">配当金合計</h3>
-              <p className="text-3xl font-bold text-amber-600">
-                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(totalDividends)}
+              <p className="text-xl font-bold text-amber-600">
+                {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalDividends)}
               </p>
               <div className="mt-4">
                 <Link
@@ -551,7 +551,7 @@ export default function Home() {
             
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
               <h3 className="text-lg font-medium text-gray-500 mb-2">投資利回り</h3>
-              <p className="text-3xl font-bold text-purple-600">
+              <p className="text-xl font-bold text-purple-600">
                 {totalInvestment > 0 
                   ? `${((totalDividends / totalInvestment) * 100).toFixed(2)}%` 
                   : '0.00%'}
