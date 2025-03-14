@@ -13,7 +13,8 @@ export default function StockEditor({ params }: { params: { id: string } }) {
   const [stock, setStock] = useState<Stock>({
     symbol: '',
     name: '',
-    country: '日本'
+    country: '日本',
+    assetType: 'stock'
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
