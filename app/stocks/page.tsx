@@ -44,6 +44,7 @@ export default function StocksPage() {
     const updateExchangeRate = async () => {
       try {
         const rate = await fetchUSDJPYRate();
+        console.log('銘柄一覧ページで為替レートを更新しました:', rate);
         setExchangeRate(rate);
       } catch (error) {
         console.error('為替レートの更新に失敗しました:', error);
@@ -53,8 +54,8 @@ export default function StocksPage() {
     // 初回実行
     updateExchangeRate();
 
-    // 10分おきに更新
-    const interval = setInterval(updateExchangeRate, 10 * 60 * 1000);
+    // 1分おきに更新（テスト用）
+    const interval = setInterval(updateExchangeRate, 1 * 60 * 1000);
 
     // クリーンアップ関数
     return () => clearInterval(interval);

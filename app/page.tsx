@@ -156,6 +156,7 @@ export default function Home() {
           setStockPrices(prices);
         }
         const rate = await fetchUSDJPYRate();
+        console.log('TOPページで為替レートを更新しました:', rate);
         setExchangeRate(rate);
       } catch (error) {
         console.error('価格情報の更新に失敗しました:', error);
@@ -165,8 +166,8 @@ export default function Home() {
     // 初回ロード時にも更新を実行
     updatePrices();
     
-    // 更新間隔を10分に戻す
-    const interval = setInterval(updatePrices, 10 * 60 * 1000);
+    // 更新間隔を1分に変更（テスト用）
+    const interval = setInterval(updatePrices, 1 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [stocks]);
