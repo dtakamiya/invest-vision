@@ -157,6 +157,21 @@ export default function StocksPage() {
         const storedPortfolioId = localStorage.getItem('selectedPortfolioId');
         const portfolioId = storedPortfolioId ? Number(storedPortfolioId) : undefined;
         
+        // 選択されたポートフォリオの情報を取得
+        if (portfolioId) {
+          try {
+            const portfolio = await dbHelper.portfolios.findUnique({
+              where: { id: portfolioId }
+            });
+            if (portfolio) {
+              setCurrentPortfolio(portfolio);
+              console.log('選択されたポートフォリオ:', portfolio.name);
+            }
+          } catch (error) {
+            console.error('ポートフォリオの取得に失敗しました:', error);
+          }
+        }
+        
         const stocksData = await dbHelper.stocks.findMany({
           orderBy: {
             symbol: 'asc',
@@ -269,7 +284,7 @@ export default function StocksPage() {
             銘柄一覧
             {currentPortfolio && (
               <span className="ml-2 text-xl font-normal">
-                (所有数: {currentPortfolio.name})
+                (ポートフォリオ: {currentPortfolio.name})
               </span>
             )}
           </h1>
