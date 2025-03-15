@@ -179,18 +179,32 @@ async function saveStockPriceToDB(stockPrice: StockPrice): Promise<void> {
       return;
     }
     
-    // 株価情報をDBに保存
-    await dbHelper.stockPrices.add({
-      stockId: stock.id,
-      symbol: stockPrice.symbol,
-      price: stockPrice.price,
-      change: stockPrice.change,
-      changePercent: stockPrice.changePercent,
-      currency: stockPrice.currency,
-      lastUpdated: stockPrice.lastUpdated
-    });
+    // 最新の株価情報を取得
+    const latestPrice = await dbHelper.stockPrices.findLatestByStockId(stock.id);
     
-    console.log(`株価情報をDBに保存しました: ${stockPrice.symbol}, 価格: ${stockPrice.price}${stockPrice.currency}`);
+    if (latestPrice) {
+      // 既存のレコードがある場合は更新
+      await dbHelper.stockPrices.update(latestPrice.id as number, {
+        price: stockPrice.price,
+        change: stockPrice.change,
+        changePercent: stockPrice.changePercent,
+        currency: stockPrice.currency,
+        lastUpdated: stockPrice.lastUpdated
+      });
+      console.log(`株価情報を更新しました: ${stockPrice.symbol}, 価格: ${stockPrice.price}${stockPrice.currency}`);
+    } else {
+      // 既存のレコードがない場合は新規作成
+      await dbHelper.stockPrices.add({
+        stockId: stock.id,
+        symbol: stockPrice.symbol,
+        price: stockPrice.price,
+        change: stockPrice.change,
+        changePercent: stockPrice.changePercent,
+        currency: stockPrice.currency,
+        lastUpdated: stockPrice.lastUpdated
+      });
+      console.log(`株価情報を新規作成しました: ${stockPrice.symbol}, 価格: ${stockPrice.price}${stockPrice.currency}`);
+    }
   } catch (error) {
     console.error(`株価情報のDB保存中にエラーが発生しました:`, error);
   }
