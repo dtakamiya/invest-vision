@@ -87,16 +87,29 @@ export default function Home() {
 
       if (stock.assetType === 'fund' && fundPrice) {
         const value = fundPrice.price * quantity / 10000;
+        // 投資信託は日本株として計算
         japanTotal += value;
         total += value;
       } else if (stockPrice && quantity > 0) {
         const value = stockPrice.price * quantity;
         if (stockPrice.currency === 'USD') {
           const valueInJPY = value * exchangeRate.rate;
-          usTotal += valueInJPY;
+          // 米国株として計算
+          if (stock.country === '米国') {
+            usTotal += valueInJPY;
+          } else {
+            // 米ドル建てでも日本株の場合があるため
+            japanTotal += valueInJPY;
+          }
           total += valueInJPY;
         } else {
-          japanTotal += value;
+          // 日本円建ての株式は日本株として計算
+          if (stock.country === '日本') {
+            japanTotal += value;
+          } else {
+            // 日本円建てでも米国株の場合があるため
+            usTotal += value;
+          }
           total += value;
         }
       }
