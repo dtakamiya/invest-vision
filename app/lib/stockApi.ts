@@ -16,6 +16,8 @@ export interface StockPrice {
  * 単一銘柄の株価情報を取得する関数
  */
 export async function fetchStockPrice(symbol: string): Promise<StockPrice | null> {
+  console.log(`fetchStockPrice: 関数が呼び出されました - ${symbol}`);
+  
   try {
     // 投資信託のシンボル（9Iから始まる）または8桁の数字（先頭が0のもの）の場合は、fund APIを使用
     if (symbol.startsWith('9I') || (symbol.length === 8 && symbol.startsWith('0') && /^\d+$/.test(symbol))) {
@@ -26,9 +28,9 @@ export async function fetchStockPrice(symbol: string): Promise<StockPrice | null
     // まずDBから最新の株価情報を取得
     const cachedPrice = await dbHelper.stockPrices.findLatestBySymbol(symbol);
     
-    // キャッシュが存在し、最終更新が24時間以内の場合はキャッシュを使用
-    if (cachedPrice && (new Date().getTime() - new Date(cachedPrice.lastUpdated).getTime() < 24 * 60 * 60 * 1000)) {
-      console.log(`キャッシュされた株価データを使用: ${symbol}`);
+    // キャッシュが存在し、最終更新が5分以内の場合はキャッシュを使用
+    if (cachedPrice && (new Date().getTime() - new Date(cachedPrice.lastUpdated).getTime() < 5 * 60 * 1000)) {
+      console.log(`キャッシュされた株価データを使用: ${symbol}, 価格: ${cachedPrice.price}${cachedPrice.currency}`);
       return {
         symbol: cachedPrice.symbol,
         price: cachedPrice.price,
@@ -42,6 +44,7 @@ export async function fetchStockPrice(symbol: string): Promise<StockPrice | null
     // タイムスタンプをクエリパラメータとして追加してキャッシュを回避
     const timestamp = new Date().getTime();
     // APIエンドポイントにリクエスト
+    console.log(`APIリクエスト実行: ${symbol}`);
     const response = await fetch(`/api/stock?symbol=${encodeURIComponent(symbol)}&_t=${timestamp}`, {
       // キャッシュを回避する設定
       cache: 'no-store',
@@ -57,6 +60,10 @@ export async function fetchStockPrice(symbol: string): Promise<StockPrice | null
     }
 
     const data = await response.json();
+    console.log(`APIレスポンス受信: ${symbol}`, { 
+      cacheInfo: data._cacheInfo,
+      hasData: !!data.chart?.result?.[0]?.meta?.regularMarketPrice
+    });
 
     // データが存在しない場合はnullを返す
     if (!data.chart?.result?.[0]?.meta?.regularMarketPrice) {
@@ -101,8 +108,8 @@ async function fetchFundPriceAsStockPrice(symbol: string): Promise<StockPrice | 
     // まずDBから最新の株価情報を取得
     const cachedPrice = await dbHelper.stockPrices.findLatestBySymbol(symbol);
     
-    // キャッシュが存在し、最終更新が24時間以内の場合はキャッシュを使用
-    if (cachedPrice && (new Date().getTime() - new Date(cachedPrice.lastUpdated).getTime() < 24 * 60 * 60 * 1000)) {
+    // キャッシュが存在し、最終更新が5分以内の場合はキャッシュを使用
+    if (cachedPrice && (new Date().getTime() - new Date(cachedPrice.lastUpdated).getTime() < 5 * 60 * 1000)) {
       console.log(`キャッシュされた投資信託データを使用: ${symbol}`);
       return {
         symbol: cachedPrice.symbol,
@@ -194,6 +201,8 @@ async function saveStockPriceToDB(stockPrice: StockPrice): Promise<void> {
  */
 export async function fetchMultipleStockPrices(symbols: string[]): Promise<Map<string, StockPrice>> {
   console.log(`複数の株価情報取得を開始: ${symbols.join(', ')}`);
+  console.log('fetchMultipleStockPrices: 関数が呼び出されました', { symbolsCount: symbols.length });
+  
   const results = new Map<string, StockPrice>();
   
   // 株式と投資信託に分ける
@@ -215,10 +224,11 @@ export async function fetchMultipleStockPrices(symbols: string[]): Promise<Map<s
   
   // 逐次処理で株価情報を取得（1秒間隔）
   for (const symbol of stockSymbols) {
+    console.log(`株価情報取得開始: ${symbol}`);
     const stockPrice = await fetchStockPrice(symbol);
     if (stockPrice) {
       results.set(symbol, stockPrice);
-      console.log(`株価情報をMapに追加: ${symbol}`);
+      console.log(`株価情報をMapに追加: ${symbol}, 価格: ${stockPrice.price}${stockPrice.currency}`);
     } else {
       console.warn(`株価情報の取得に失敗: ${symbol}`);
     }
@@ -233,10 +243,11 @@ export async function fetchMultipleStockPrices(symbols: string[]): Promise<Map<s
   // 投資信託の基準価格を取得（1秒間隔）
   if (fundSymbols.length > 0) {
     for (const symbol of fundSymbols) {
+      console.log(`投資信託情報取得開始: ${symbol}`);
       const fundPrice = await fetchFundPriceAsStockPrice(symbol);
       if (fundPrice) {
         results.set(symbol, fundPrice);
-        console.log(`投資信託情報をMapに追加: ${symbol}`);
+        console.log(`投資信託情報をMapに追加: ${symbol}, 価格: ${fundPrice.price}${fundPrice.currency}`);
       } else {
         console.warn(`投資信託情報の取得に失敗: ${symbol}`);
       }
