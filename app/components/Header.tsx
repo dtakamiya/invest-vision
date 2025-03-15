@@ -99,7 +99,7 @@ export default function Header() {
               </button>
               
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 glass rounded-xl shadow-lg z-10 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg z-10 overflow-hidden">
                   <div className="py-2">
                     {portfolios.length > 0 ? (
                       <>
@@ -133,7 +133,7 @@ export default function Header() {
                         <div className="border-t border-gray-100 my-1"></div>
                         <Link
                           href="/portfolios"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="block px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 hover-scale transition-all"
                           onClick={() => setIsDropdownOpen(false)}
                         >
                           ポートフォリオ管理
