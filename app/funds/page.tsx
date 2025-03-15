@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { dbHelper, InvestmentFund, Portfolio } from "@/app/lib/db";
 import { PlusCircle, ArrowUpCircle, ArrowDownCircle, Trash2 } from "lucide-react";
+import { formatDateLocale } from "@/app/utils/formatDate";
+import { formatJPY } from "@/app/utils/formatCurrency";
 
 export default function FundsPage() {
   const [funds, setFunds] = useState<InvestmentFund[]>([]);
@@ -130,14 +132,14 @@ export default function FundsPage() {
         <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
           <h2 className="text-lg font-medium text-muted-foreground mb-2">現在の投資資金</h2>
           <p className="text-3xl font-bold">
-            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(totalFunds)}
+            {formatJPY(totalFunds)}
           </p>
         </div>
         
         <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
           <h2 className="text-lg font-medium text-muted-foreground mb-2">入金合計</h2>
           <p className="text-3xl font-bold text-green-600">
-            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(
+            {formatJPY(
               funds.filter(fund => fund.type === 'deposit').reduce((sum, fund) => sum + fund.amount, 0)
             )}
           </p>
@@ -146,7 +148,7 @@ export default function FundsPage() {
         <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
           <h2 className="text-lg font-medium text-muted-foreground mb-2">出金合計</h2>
           <p className="text-3xl font-bold text-red-600">
-            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(
+            {formatJPY(
               funds.filter(fund => fund.type === 'withdrawal').reduce((sum, fund) => sum + fund.amount, 0)
             )}
           </p>
@@ -196,7 +198,7 @@ export default function FundsPage() {
                 {funds.map((fund) => (
                   <tr key={fund.id} className="table-row">
                     <td className="table-cell">
-                      {new Date(fund.date).toLocaleDateString('ja-JP')}
+                      {formatDateLocale(fund.date)}
                     </td>
                     <td className="table-cell">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -209,7 +211,7 @@ export default function FundsPage() {
                     </td>
                     <td className="table-cell font-medium">
                       <span className={fund.type === 'deposit' ? 'text-green-600' : 'text-red-600'}>
-                        {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(fund.amount)}
+                        {formatJPY(fund.amount)}
                       </span>
                     </td>
                     <td className="table-cell">

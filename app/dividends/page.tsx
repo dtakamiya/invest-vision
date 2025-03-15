@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { dbHelper, Dividend, Stock, Portfolio } from "@/app/lib/db";
 import { useEffect, useState } from "react";
+import { formatDateLocale } from "@/app/utils/formatDate";
+import { formatNumber } from "@/app/utils/formatCurrency";
 
 type DividendWithStock = Dividend & {
   stock: Stock;
@@ -105,7 +107,7 @@ export default function DividendsPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">総配当金額</p>
-              <p className="text-2xl font-bold text-foreground">{totalDividends.toLocaleString()}円</p>
+              <p className="text-2xl font-bold text-foreground">{formatNumber(totalDividends)}円</p>
             </div>
           </div>
         </div>
@@ -138,7 +140,7 @@ export default function DividendsPage() {
               <p className="text-sm text-muted-foreground font-medium">平均配当金額</p>
               <p className="text-2xl font-bold text-foreground">
                 {dividends.length > 0 
-                  ? Math.round(totalDividends / dividends.length).toLocaleString() 
+                  ? formatNumber(Math.round(totalDividends / dividends.length))
                   : 0}円
               </p>
             </div>
@@ -191,7 +193,7 @@ export default function DividendsPage() {
                           <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
                         <span className="text-sm text-foreground">
-                          {new Date(dividend.receivedDate).toLocaleDateString('ja-JP')}
+                          {formatDateLocale(dividend.receivedDate)}
                         </span>
                       </div>
                     </td>
@@ -210,7 +212,7 @@ export default function DividendsPage() {
                           <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
                           <path d="M12 18V6"></path>
                         </svg>
-                        <span className="text-sm font-medium text-foreground">{dividend.amount.toLocaleString()}円</span>
+                        <span className="text-sm font-medium text-foreground">{formatNumber(dividend.amount)}円</span>
                       </div>
                     </td>
                     <td className="table-cell">
@@ -221,7 +223,7 @@ export default function DividendsPage() {
                           <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg>
                         <span className="text-sm text-foreground">
-                          {dividend.taxAmount ? `${dividend.taxAmount.toLocaleString()}円` : '-'}
+                          {dividend.taxAmount ? `${formatNumber(dividend.taxAmount)}円` : '-'}
                         </span>
                       </div>
                     </td>

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { dbHelper, Purchase, Stock, Portfolio } from "@/app/lib/db";
 import { useEffect, useState } from "react";
+import { formatDateLocale } from "@/app/utils/formatDate";
+import { formatNumber, formatJPY } from "@/app/utils/formatCurrency";
 
 type PurchaseWithStock = Purchase & {
   stock: Stock;
@@ -116,7 +118,7 @@ export default function PurchasesPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">総投資額</p>
-              <p className="text-2xl font-bold text-foreground">{totalInvestment.toLocaleString()}円</p>
+              <p className="text-2xl font-bold text-foreground">{formatNumber(totalInvestment)}円</p>
             </div>
           </div>
         </div>
@@ -131,7 +133,7 @@ export default function PurchasesPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">総手数料</p>
-              <p className="text-2xl font-bold text-foreground">{totalFees.toLocaleString()}円</p>
+              <p className="text-2xl font-bold text-foreground">{formatNumber(totalFees)}円</p>
             </div>
           </div>
         </div>
@@ -203,7 +205,7 @@ export default function PurchasesPage() {
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                           </svg>
                           <span className="text-sm text-foreground">
-                            {new Date(purchase.purchaseDate).toLocaleDateString('ja-JP')}
+                            {formatDateLocale(purchase.purchaseDate)}
                           </span>
                         </div>
                       </td>
@@ -222,7 +224,7 @@ export default function PurchasesPage() {
                         </span>
                       </td>
                       <td className="table-cell">
-                        <span className="text-sm text-foreground">{purchase.price.toLocaleString()}円</span>
+                        <span className="text-sm text-foreground">{formatNumber(purchase.price)}円</span>
                       </td>
                       <td className="table-cell">
                         <div className="flex items-center">
@@ -243,7 +245,7 @@ export default function PurchasesPage() {
                             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
                             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                           </svg>
-                          <span className="text-sm text-foreground">{purchase.fee.toLocaleString()}円</span>
+                          <span className="text-sm text-foreground">{formatNumber(purchase.fee)}円</span>
                         </div>
                       </td>
                       <td className="table-cell max-w-xs">
