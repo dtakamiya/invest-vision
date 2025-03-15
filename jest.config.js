@@ -6,24 +6,25 @@ module.exports = {
     '<rootDir>/.next/'
   ],
   moduleNameMapper: {
-    '^@/app/(.*)$': '<rootDir>/app/$1',
+    '^@/(.*)$': '<rootDir>/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
   },
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }]
   },
   collectCoverageFrom: [
-    'app/**/*.{js,jsx,ts,tsx}',
-    '!app/**/*.d.ts',
-    '!app/**/_*.{js,jsx,ts,tsx}',
-    '!app/**/*.stories.{js,jsx,ts,tsx}'
+    'app/utils/**/*.{js,jsx,ts,tsx}',
+    'app/lib/exchangeApi.ts',
+    'app/lib/calculateValue.ts',
+    '!**/*.d.ts',
+    '!**/node_modules/**',
   ],
   coverageThreshold: {
     global: {
-      branches: 0.1,
-      functions: 0.1,
-      lines: 0.1,
-      statements: 0.1
-    }
+      statements: 90,
+      branches: 90,
+      functions: 90,
+      lines: 90,
+    },
   }
 }; 
