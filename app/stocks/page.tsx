@@ -8,39 +8,7 @@ import { fetchMultipleStockPrices, StockPrice } from "@/app/lib/stockApi";
 import { fetchMultipleFundPrices, FundPrice } from "@/app/lib/fundApi";
 import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
 import { toast } from 'react-hot-toast';
-
-// 評価額を計算する関数
-function calculateValue(
-  stock: Stock,
-  stockPrice: StockPrice | undefined,
-  fundPrice: FundPrice | undefined,
-  exchangeRate: { rate: number; lastUpdated: Date },
-  quantity: number
-): { value: number | null; currency: string } {
-  // 投資信託の場合
-  if (stock.assetType === 'fund' && fundPrice) {
-    return {
-      value: Math.round(fundPrice.price * quantity / 10000),
-      currency: '円'
-    };
-  }
-  
-  // 株式の場合
-  if (!stockPrice || quantity === 0) return { value: null, currency: '円' };
-  
-  // USDの場合、為替レートを適用
-  if (stockPrice.currency === 'USD') {
-    return {
-      value: Math.round(stockPrice.price * quantity * exchangeRate.rate),
-      currency: '円'
-    };
-  }
-  
-  return {
-    value: Math.round(stockPrice.price * quantity),
-    currency: '円'
-  };
-}
+import { calculateValue } from "@/app/utils/calculateValue";
 
 export default function StocksPage() {
   const [stocks, setStocks] = useState<Stock[]>([]);
