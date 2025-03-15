@@ -85,43 +85,55 @@ export default function Home() {
       const fundPrice = fundPrices.get(stock.symbol);
       const quantity = stock.id !== undefined ? stockQuantities.get(stock.id) || 0 : 0;
 
-      if (stock.assetType === 'fund' && fundPrice) {
-        // 投資信託の評価額計算にユーティリティ関数を使用
-        const value = calculateFundValue(fundPrice.price, quantity);
-        // 投資信託は日本株として計算
-        japanTotal += value;
-        total += value;
-      } else if (stockPrice && quantity > 0) {
-        if (stockPrice.currency === 'USD') {
-          // 米ドル建て株式の評価額計算にユーティリティ関数を使用
-          const valueInJPY = calculateUSDStockValue(stockPrice.price, quantity, exchangeRate.rate);
-          // 米国株として計算
-          if (stock.country === '米国') {
-            usTotal += valueInJPY;
-          } else {
-            // 米ドル建てでも日本株の場合があるため
-            japanTotal += valueInJPY;
-          }
-          total += valueInJPY;
-        } else {
-          // 日本円建て株式の評価額計算にユーティリティ関数を使用
-          const value = calculateJPYStockValue(stockPrice.price, quantity);
-          // 日本円建ての株式は日本株として計算
-          if (stock.country === '日本') {
-            japanTotal += value;
-          } else {
-            // 日本円建てでも米国株の場合があるため
-            usTotal += value;
-          }
-          total += value;
+      // 株式ページと同じ計算方法を使用
+      const result = calculateValue(stock, stockPrice, fundPrice, quantity, exchangeRate.rate);
+      
+      if (result.value !== null) {
+        // 国情報に基づいて分類
+        if (stock.country === '日本' || stock.assetType === 'fund') {
+          japanTotal += result.value;
+        } else if (stock.country === '米国') {
+          usTotal += result.value;
         }
+        
+        total += result.value;
       }
     });
 
     return {
-      japanTotal: japanTotal,
-      usTotal: usTotal,
-      total: japanTotal + usTotal
+      japanTotal,
+      usTotal,
+      total
+    };
+  };
+
+  // 評価額を計算する関数（株式ページと同じロジックを使用）
+  const calculateValue = (
+    stock: Stock,
+    stockPrice: StockPrice | undefined,
+    fundPrice: FundPrice | undefined,
+    quantity: number,
+    exchangeRateValue: number
+  ): { value: number | null } => {
+    // 投資信託の場合
+    if (stock.assetType === 'fund' && fundPrice) {
+      return {
+        value: calculateFundValue(fundPrice.price, quantity)
+      };
+    }
+    
+    // 株式の場合
+    if (!stockPrice || quantity === 0) return { value: null };
+    
+    // USDの場合、為替レートを適用
+    if (stockPrice.currency === 'USD') {
+      return {
+        value: calculateUSDStockValue(stockPrice.price, quantity, exchangeRateValue)
+      };
+    }
+    
+    return {
+      value: calculateJPYStockValue(stockPrice.price, quantity)
     };
   };
 
