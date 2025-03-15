@@ -94,8 +94,8 @@ export default function DataManagement() {
   };
   
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-6">データ管理</h2>
+    <div className="glass p-8 rounded-xl">
+      <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-transparent bg-clip-text">データ管理</h2>
       
       {/* 最後のバックアップ日時 */}
       {lastBackup && (
@@ -104,25 +104,33 @@ export default function DataManagement() {
         </div>
       )}
       
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* エクスポート */}
-        <div>
+        <div className="hover-lift transition-all">
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed"
+            className="w-full gradient-btn hover-scale disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {exporting ? 'エクスポート中...' : 'データをエクスポート'}
+            {exporting ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                エクスポート中...
+              </span>
+            ) : 'データをエクスポート'}
           </button>
-          <p className="text-sm text-gray-600 mt-2">
+          <p className="text-sm text-gray-600 mt-3">
             すべてのデータをJSONファイルとしてダウンロードします
           </p>
         </div>
         
         {/* インポート */}
-        <div>
+        <div className="neumorphic-inset p-6 rounded-xl">
           <label className="block">
-            <span className="sr-only">データをインポート</span>
+            <span className="text-lg font-medium text-gray-700 mb-3 block">データをインポート</span>
             <input
               type="file"
               accept=".json"
@@ -130,44 +138,55 @@ export default function DataManagement() {
               disabled={importing}
               className="block w-full text-sm text-gray-500
                 file:mr-4 file:py-2 file:px-4
-                file:rounded file:border-0
+                file:rounded-full file:border-0
                 file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100
+                file:bg-gradient-to-r file:from-blue-600 file:to-cyan-600 file:text-white
+                hover:file:opacity-90
                 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </label>
-          <p className="text-sm text-gray-600 mt-2">
-            {importing ? 'インポート中...' : 'JSONファイルからデータをインポートします'}
+          <p className="text-sm text-gray-600 mt-3">
+            {importing ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                インポート中...
+              </span>
+            ) : 'JSONファイルからデータをインポートします'}
           </p>
-          <p className="text-sm text-red-500 mt-1">
+          <p className="text-sm text-red-500 mt-2">
             注意: インポートすると既存のデータはすべて上書きされます
           </p>
         </div>
 
         {/* 注意事項 */}
-        <div className="bg-amber-50 p-4 rounded-lg">
-          <h3 className="text-sm font-semibold text-amber-800 mb-2">
+        <div className="glass-dark p-6 rounded-xl text-white">
+          <h3 className="text-lg font-semibold mb-4 flex items-center">
+            <svg className="h-6 w-6 mr-2 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             データ管理に関する注意事項
           </h3>
-          <ul className="text-sm text-amber-700 space-y-2">
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <ul className="space-y-4">
+            <li className="flex items-start hover-scale transition-all">
+              <svg className="h-6 w-6 text-amber-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              ブラウザのデータを消去すると、保存したデータも削除されます
+              <span>ブラウザのデータを消去すると、保存したデータも削除されます</span>
             </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <li className="flex items-start hover-scale transition-all">
+              <svg className="h-6 w-6 text-amber-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              異なるブラウザやデバイス間でデータは共有されません
+              <span>異なるブラウザやデバイス間でデータは共有されません</span>
             </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <li className="flex items-start hover-scale transition-all">
+              <svg className="h-6 w-6 text-amber-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              定期的なデータのバックアップを推奨します（週1回程度）
+              <span>定期的なデータのバックアップを推奨します（週1回程度）</span>
             </li>
           </ul>
         </div>

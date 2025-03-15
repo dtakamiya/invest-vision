@@ -258,6 +258,101 @@
   .badge-outline {
     @apply text-foreground;
   }
+
+  /* グラスモーフィズム */
+  .glass {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  }
+
+  .glass-dark {
+    background: rgba(17, 25, 40, 0.75);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  /* ニューモーフィズム */
+  .neumorphic {
+    background: #f0f0f3;
+    box-shadow: 10px 10px 20px #d1d1d4,
+                -10px -10px 20px #ffffff;
+    border-radius: 15px;
+  }
+
+  .neumorphic-inset {
+    background: #f0f0f3;
+    box-shadow: inset 5px 5px 10px #d1d1d4,
+                inset -5px -5px 10px #ffffff;
+    border-radius: 15px;
+  }
+
+  /* マイクロインタラクション */
+  .hover-scale {
+    transition: transform 0.3s ease;
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  /* グラデーションボタン */
+  .gradient-btn {
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)));
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+  }
+
+  .gradient-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, hsl(var(--secondary)), hsl(var(--primary)));
+    border-radius: var(--radius);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.3s ease;
+  }
+
+  .gradient-btn:hover::before {
+    opacity: 1;
+  }
+
+  /* 3Dカード効果 */
+  .card-3d {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+
+  .card-3d-content {
+    transition: transform 0.5s ease;
+    transform: translateZ(0);
+  }
+
+  .card-3d:hover .card-3d-content {
+    transform: translateZ(20px);
+  }
 }
 
 @layer utilities {
