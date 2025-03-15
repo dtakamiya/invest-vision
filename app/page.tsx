@@ -6,52 +6,12 @@ import { openDB, dbHelper, Stock, Purchase, Portfolio } from "@/app/lib/db";
 import { StockPrice, fetchMultipleStockPrices } from "@/app/lib/stockApi";
 import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
 import { toast } from 'react-hot-toast';
-import { migrateDataToDefaultPortfolio } from './actions/migrate-portfolio';
 
 interface Fund {
   id: number;
   amount: number;
   date: Date;
   notes?: string;
-}
-
-// データ移行を実行するコンポーネント
-function DataMigration() {
-  useEffect(() => {
-    const runMigration = async () => {
-      try {
-        // ローカルストレージをチェックして、既に移行済みかどうかを確認
-        const migrated = localStorage.getItem('portfolioMigrated');
-        if (migrated) {
-          console.log('データ移行は既に完了しています');
-          return;
-        }
-
-        console.log('データ移行を開始します...');
-        const result = await migrateDataToDefaultPortfolio();
-        
-        if (result.success) {
-          console.log('データ移行が完了しました');
-          // 移行完了をローカルストレージに記録
-          localStorage.setItem('portfolioMigrated', 'true');
-          if (result.portfolioId) {
-            localStorage.setItem('currentPortfolioId', String(result.portfolioId));
-          }
-        } else {
-          console.error('データ移行に失敗しました:', result.error);
-        }
-      } catch (error) {
-        console.error('データ移行中にエラーが発生しました:', error);
-      }
-    };
-
-    // ブラウザ環境でのみ実行
-    if (typeof window !== 'undefined') {
-      runMigration();
-    }
-  }, []);
-
-  return null; // UIは表示しない
 }
 
 export default function Home() {
@@ -315,9 +275,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-12 animate-fadeIn">
-      {/* データ移行コンポーネントを追加 */}
-      <DataMigration />
-      
       {/* ヒーローセクション */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-20"></div>
