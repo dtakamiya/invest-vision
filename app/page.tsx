@@ -286,7 +286,33 @@ export default function Home() {
       setPriceLoading(true);
       setUpdateComplete(false); // 更新開始時にリセット
       
-      if (stocksData.length > 0) {
+      // 株価情報の更新が必要かチェック
+      let shouldUpdatePrices = false;
+      
+      // 株価情報の最終更新時刻を確認
+      if (stockPrices.size > 0) {
+        // 最も古い株価情報の更新時刻を取得
+        const oldestUpdate = Array.from(stockPrices.values()).reduce((oldest, price) => {
+          return price.lastUpdated < oldest ? price.lastUpdated : oldest;
+        }, new Date());
+        
+        // 5分以上経過しているかチェック
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        shouldUpdatePrices = oldestUpdate < fiveMinutesAgo;
+        
+        console.log('株価情報の更新チェック:', {
+          oldestUpdate,
+          fiveMinutesAgo,
+          shouldUpdate: shouldUpdatePrices
+        });
+      } else {
+        // 株価情報がない場合は更新が必要
+        shouldUpdatePrices = true;
+      }
+      
+      // 株価情報の更新が必要な場合のみAPIリクエストを実行
+      if (shouldUpdatePrices && stocksData.length > 0) {
+        console.log('株価情報の更新を開始します');
         const symbols = stocksData.map(stock => stock.symbol);
         const prices = await fetchMultipleStockPrices(symbols);
         
@@ -299,6 +325,8 @@ export default function Home() {
         
         setStockPrices(updatedPrices);
         console.log(`株価情報取得完了: ${prices.size}件, 全体: ${updatedPrices.size}件`);
+      } else {
+        console.log('株価情報は最新のため、更新をスキップします');
       }
       
       // 為替レートの取得（株価取得の後に行う）
@@ -326,7 +354,33 @@ export default function Home() {
       try {
         setUpdateComplete(false); // 更新開始時にリセット
         
-        if (stocks.length > 0) {
+        // 株価情報の更新が必要かチェック
+        let shouldUpdatePrices = false;
+        
+        // 株価情報の最終更新時刻を確認
+        if (stockPrices.size > 0) {
+          // 最も古い株価情報の更新時刻を取得
+          const oldestUpdate = Array.from(stockPrices.values()).reduce((oldest, price) => {
+            return price.lastUpdated < oldest ? price.lastUpdated : oldest;
+          }, new Date());
+          
+          // 5分以上経過しているかチェック
+          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+          shouldUpdatePrices = oldestUpdate < fiveMinutesAgo;
+          
+          console.log('定期更新: 株価情報の更新チェック:', {
+            oldestUpdate,
+            fiveMinutesAgo,
+            shouldUpdate: shouldUpdatePrices
+          });
+        } else {
+          // 株価情報がない場合は更新が必要
+          shouldUpdatePrices = true;
+        }
+        
+        // 株価情報の更新が必要な場合のみAPIリクエストを実行
+        if (shouldUpdatePrices && stocks.length > 0) {
+          console.log('定期更新: 株価情報の更新を開始します');
           const symbols = stocks.map(stock => stock.symbol);
           const prices = await fetchMultipleStockPrices(symbols);
           
@@ -339,6 +393,8 @@ export default function Home() {
           
           setStockPrices(updatedPrices);
           console.log(`価格情報更新完了: ${prices.size}件, 全体: ${updatedPrices.size}件`);
+        } else {
+          console.log('定期更新: 株価情報は最新のため、更新をスキップします');
         }
         
         // 為替レートの取得（株価取得の後に行う）

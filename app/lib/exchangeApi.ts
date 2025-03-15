@@ -16,12 +16,19 @@ export async function fetchUSDJPYRate(isManualUpdate = false): Promise<ExchangeR
         const latestRate = await db.exchangeRates.findLatestByCurrencyPair(fromCurrency, toCurrency);
         
         // 有効な為替レートがある場合はそれを使用
-        if (latestRate && !db.exchangeRates.isRateExpired(fromCurrency, toCurrency)) {
-          console.log('データベースの為替レートを使用:', latestRate);
-          return {
-            rate: latestRate.rate,
-            lastUpdated: new Date(latestRate.lastUpdated)
-          };
+        if (latestRate) {
+          // 期限切れかどうかを確認
+          const isExpired = await db.exchangeRates.isRateExpired(fromCurrency, toCurrency);
+          
+          if (!isExpired) {
+            console.log('データベースの為替レートを使用:', latestRate);
+            return {
+              rate: latestRate.rate,
+              lastUpdated: new Date(latestRate.lastUpdated)
+            };
+          } else {
+            console.log('データベースの為替レートは期限切れです。APIから最新情報を取得します。');
+          }
         }
       } catch (dbError) {
         console.error('データベースからの為替レート取得エラー:', dbError);
@@ -33,6 +40,7 @@ export async function fetchUSDJPYRate(isManualUpdate = false): Promise<ExchangeR
     const timestamp = new Date().getTime();
     const url = `/api/exchange-rate?_t=${timestamp}${isManualUpdate ? '&manual=true' : ''}`;
     
+    console.log('Yahoo Finance APIから為替レートを取得中...');
     const response = await fetch(url, {
       // キャッシュを回避する設定を強化
       cache: 'no-store',

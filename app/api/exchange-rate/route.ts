@@ -19,11 +19,15 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const isManualUpdate = url.searchParams.has('manual');
     
-    // キャッシュが有効かチェック（手動更新でない場合のみ）
-    if (!isManualUpdate && cachedRate && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION)) {
-      console.log('キャッシュされた為替レートを使用:', cachedRate);
-      const res = NextResponse.json(cachedRate);
-      return res;
+    // 手動更新の場合は常に最新データを取得
+    if (!isManualUpdate) {
+      // クライアント側のDBが期限切れの場合のみ最新データを取得
+      // サーバー側のキャッシュも確認
+      if (cachedRate && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION)) {
+        console.log('サーバーキャッシュされた為替レートを使用:', cachedRate);
+        const res = NextResponse.json(cachedRate);
+        return res;
+      }
     }
 
     console.log('Yahoo Finance APIから為替レートを取得中...');
