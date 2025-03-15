@@ -407,12 +407,6 @@ export default function StocksPage() {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                  >
-                    配当金記録
-                  </th>
-                  <th
-                    scope="col"
                     className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
                   >
                     操作
@@ -572,19 +566,6 @@ export default function StocksPage() {
                         <div className="font-bold text-gray-800">
                           {stock.id !== undefined ? stockQuantities.get(stock.id as number)?.toLocaleString() || 0 : 0}株
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <Link
-                          href={`/stocks/${stock.id}/dividends`}
-                          className="text-amber-600 hover:text-amber-800 font-medium flex items-center"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
-                            <path d="M12 18V6"></path>
-                          </svg>
-                          配当金記録を見る
-                        </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex justify-end space-x-2">
