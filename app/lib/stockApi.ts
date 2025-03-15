@@ -1,5 +1,6 @@
 // Yahoo Finance APIを利用して株価情報を取得するユーティリティ
 import { FundPrice } from './fundApi';
+import { delay } from './utils';
 
 export interface StockPrice {
   symbol: string;
@@ -132,34 +133,38 @@ export async function fetchMultipleStockPrices(symbols: string[]): Promise<Map<s
     funds: fundSymbols.length
   });
   
-  // 並列処理で複数の株価情報を取得
-  const promises = stockSymbols.map(symbol => fetchStockPrice(symbol));
-  const stockPrices = await Promise.all(promises);
-  
-  // 結果をMapに格納
-  for (let i = 0; i < stockSymbols.length; i++) {
-    const stockPrice = stockPrices[i];
+  // 逐次処理で株価情報を取得（1秒間隔）
+  for (const symbol of stockSymbols) {
+    const stockPrice = await fetchStockPrice(symbol);
     if (stockPrice) {
-      results.set(stockSymbols[i], stockPrice);
-      console.log(`株価情報をMapに追加: ${stockSymbols[i]}`);
+      results.set(symbol, stockPrice);
+      console.log(`株価情報をMapに追加: ${symbol}`);
     } else {
-      console.warn(`株価情報の取得に失敗: ${stockSymbols[i]}`);
+      console.warn(`株価情報の取得に失敗: ${symbol}`);
+    }
+    
+    // 次のリクエストまで1秒待機（最後のリクエストでは待機しない）
+    if (stockSymbols.indexOf(symbol) < stockSymbols.length - 1) {
+      console.log(`次のリクエストまで1秒待機...`);
+      await delay(1000);
     }
   }
   
-  // 投資信託の基準価格を取得
+  // 投資信託の基準価格を取得（1秒間隔）
   if (fundSymbols.length > 0) {
-    const fundPromises = fundSymbols.map(symbol => fetchFundPriceAsStockPrice(symbol));
-    const fundPrices = await Promise.all(fundPromises);
-    
-    // 結果をMapに格納
-    for (let i = 0; i < fundSymbols.length; i++) {
-      const fundPrice = fundPrices[i];
+    for (const symbol of fundSymbols) {
+      const fundPrice = await fetchFundPriceAsStockPrice(symbol);
       if (fundPrice) {
-        results.set(fundSymbols[i], fundPrice);
-        console.log(`投資信託情報をMapに追加: ${fundSymbols[i]}`);
+        results.set(symbol, fundPrice);
+        console.log(`投資信託情報をMapに追加: ${symbol}`);
       } else {
-        console.warn(`投資信託情報の取得に失敗: ${fundSymbols[i]}`);
+        console.warn(`投資信託情報の取得に失敗: ${symbol}`);
+      }
+      
+      // 次のリクエストまで1秒待機（最後のリクエストでは待機しない）
+      if (fundSymbols.indexOf(symbol) < fundSymbols.length - 1) {
+        console.log(`次のリクエストまで1秒待機...`);
+        await delay(1000);
       }
     }
   }

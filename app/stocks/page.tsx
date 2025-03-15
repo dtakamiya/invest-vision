@@ -52,33 +52,40 @@ export default function StocksPage() {
   const [stockQuantities, setStockQuantities] = useState<Map<number, number>>(new Map());
   const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
   const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
+  const [dataStatus, setDataStatus] = useState<'loading' | 'partial' | 'complete'>('loading');
   const router = useRouter();
 
   // 10分おきに為替レートを更新
   useEffect(() => {
     const updateExchangeRate = async () => {
       try {
+        setExchangeRateLoading(true);
         const rate = await fetchUSDJPYRate();
         console.log('銘柄一覧ページで為替レートを更新しました:', rate);
         setExchangeRate(rate);
       } catch (error) {
         console.error('為替レートの更新に失敗しました:', error);
+      } finally {
+        setExchangeRateLoading(false);
       }
     };
 
     // 初回実行
     updateExchangeRate();
 
-    // 1分おきに更新（テスト用）
-    const interval = setInterval(updateExchangeRate, 1 * 60 * 1000);
+    // 10分おきに更新
+    const interval = setInterval(updateExchangeRate, 10 * 60 * 1000);
 
     // クリーンアップ関数
     return () => clearInterval(interval);
   }, []);
 
+  // 基本データの取得（ポートフォリオと株式リスト）
   useEffect(() => {
-    const fetchStocks = async () => {
+    const fetchBasicData = async () => {
       try {
+        setLoading(true);
+        
         // 現在選択されているポートフォリオIDを取得
         const storedPortfolioId = localStorage.getItem('currentPortfolioId');
         let portfolioId: number | undefined;
@@ -102,58 +109,11 @@ export default function StocksPage() {
             symbol: 'asc',
           },
         });
+        
         setStocks(stocksData);
         
-        // 株価情報と投資信託基準価格を取得
-        if (stocksData.length > 0) {
-          setPriceLoading(true);
-          
-          // 株式と投資信託に分ける
-          const stockSymbols: string[] = [];
-          const fundSymbols: string[] = [];
-          
-          stocksData.forEach(stock => {
-            if (stock.assetType === 'fund') {
-              fundSymbols.push(stock.symbol);
-            } else {
-              stockSymbols.push(stock.symbol);
-            }
-          });
-          
-          console.log('銘柄一覧: 株式と投資信託に分類', { 
-            stocks: stockSymbols.length, 
-            funds: fundSymbols.length,
-            fundSymbols
-          });
-          
-          // 株価情報を取得
-          if (stockSymbols.length > 0) {
-            try {
-              const prices = await fetchMultipleStockPrices(stockSymbols);
-              setStockPrices(prices);
-              console.log(`株価情報取得完了: ${prices.size}件`);
-            } catch (error) {
-              console.error('株価情報の取得中にエラーが発生しました:', error);
-            }
-          }
-          
-          // 投資信託基準価格を取得
-          if (fundSymbols.length > 0) {
-            try {
-              console.log('投資信託基準価格の取得を開始:', fundSymbols);
-              const prices = await fetchMultipleFundPrices(fundSymbols);
-              console.log('投資信託基準価格の取得結果:', { 
-                取得成功: prices.size, 
-                取得失敗: fundSymbols.length - prices.size,
-                取得したシンボル: Array.from(prices.keys())
-              });
-              setFundPrices(prices);
-            } catch (error) {
-              console.error('投資信託基準価格の取得中にエラーが発生しました:', error);
-            }
-          }
-          
-          // 各銘柄の所有数を計算（選択されたポートフォリオのみ）
+        // 各銘柄の所有数を計算（選択されたポートフォリオのみ）
+        if (portfolioId) {
           const quantities = new Map<number, number>();
           
           // 選択されたポートフォリオの購入記録を取得
@@ -174,17 +134,86 @@ export default function StocksPage() {
           }
           
           setStockQuantities(quantities);
-          setPriceLoading(false);
         }
+        
+        // 基本データの読み込みが完了したら、画面を表示
+        setLoading(false);
+        setDataStatus('partial');
+        
+        // 価格データを非同期で取得
+        fetchPriceData(stocksData);
+        
       } catch (error) {
         console.error('株式銘柄の取得に失敗しました:', error);
-      } finally {
         setLoading(false);
+        toast.error('株式データの取得に失敗しました');
       }
     };
 
-    fetchStocks();
+    fetchBasicData();
   }, []);
+
+  // 価格データを非同期で取得する関数
+  const fetchPriceData = async (stocksData: Stock[]) => {
+    if (stocksData.length === 0) return;
+    
+    try {
+      setPriceLoading(true);
+      
+      // 株式と投資信託に分ける
+      const stockSymbols: string[] = [];
+      const fundSymbols: string[] = [];
+      
+      stocksData.forEach(stock => {
+        if (stock.assetType === 'fund') {
+          fundSymbols.push(stock.symbol);
+        } else {
+          stockSymbols.push(stock.symbol);
+        }
+      });
+      
+      console.log('価格データ取得: 株式と投資信託に分類', { 
+        stocks: stockSymbols.length, 
+        funds: fundSymbols.length
+      });
+      
+      // 株価情報を取得
+      if (stockSymbols.length > 0) {
+        try {
+          console.log('株価情報の取得を開始:', stockSymbols);
+          const prices = await fetchMultipleStockPrices(stockSymbols);
+          setStockPrices(prices);
+          console.log(`株価情報取得完了: ${prices.size}件`);
+        } catch (error) {
+          console.error('株価情報の取得中にエラーが発生しました:', error);
+          toast.error('株価情報の取得に失敗しました');
+        }
+      }
+      
+      // 投資信託基準価格を取得
+      if (fundSymbols.length > 0) {
+        try {
+          console.log('投資信託基準価格の取得を開始:', fundSymbols);
+          const prices = await fetchMultipleFundPrices(fundSymbols);
+          console.log('投資信託基準価格の取得結果:', { 
+            取得成功: prices.size, 
+            取得失敗: fundSymbols.length - prices.size
+          });
+          setFundPrices(prices);
+        } catch (error) {
+          console.error('投資信託基準価格の取得中にエラーが発生しました:', error);
+          toast.error('投資信託価格の取得に失敗しました');
+        }
+      }
+      
+      setDataStatus('complete');
+    } catch (error) {
+      console.error('価格データの取得に失敗しました:', error);
+      toast.error('価格データの取得に失敗しました');
+    } finally {
+      setPriceLoading(false);
+    }
+  };
 
   // 株価情報を手動で更新する関数
   const refreshPrices = async () => {
@@ -192,6 +221,7 @@ export default function StocksPage() {
     
     try {
       setPriceLoading(true);
+      setDataStatus('partial');
       
       // 株式と投資信託に分ける
       const stockSymbols: string[] = [];
@@ -207,8 +237,7 @@ export default function StocksPage() {
       
       console.log('株価更新: 株式と投資信託に分類', { 
         stocks: stockSymbols.length, 
-        funds: fundSymbols.length,
-        fundSymbols
+        funds: fundSymbols.length
       });
       
       // 株価情報を取得
@@ -217,8 +246,10 @@ export default function StocksPage() {
           const prices = await fetchMultipleStockPrices(stockSymbols);
           setStockPrices(prices);
           console.log(`株価情報更新完了: ${prices.size}件`);
+          toast.success('株価情報を更新しました');
         } catch (error) {
           console.error('株価情報の更新中にエラーが発生しました:', error);
+          toast.error('株価情報の更新に失敗しました');
         }
       }
       
@@ -229,25 +260,34 @@ export default function StocksPage() {
           const prices = await fetchMultipleFundPrices(fundSymbols);
           console.log('投資信託基準価格の更新結果:', { 
             更新成功: prices.size, 
-            更新失敗: fundSymbols.length - prices.size,
-            更新したシンボル: Array.from(prices.keys())
+            更新失敗: fundSymbols.length - prices.size
           });
           setFundPrices(prices);
+          toast.success('投資信託価格を更新しました');
         } catch (error) {
           console.error('投資信託基準価格の更新中にエラーが発生しました:', error);
+          toast.error('投資信託価格の更新に失敗しました');
         }
       }
       
       // 為替レートも更新
       try {
+        setExchangeRateLoading(true);
         const rate = await fetchUSDJPYRate();
         setExchangeRate(rate);
         console.log('為替レート更新完了:', rate);
+        toast.success('為替レートを更新しました');
       } catch (error) {
         console.error('為替レートの更新中にエラーが発生しました:', error);
+        toast.error('為替レートの更新に失敗しました');
+      } finally {
+        setExchangeRateLoading(false);
       }
+      
+      setDataStatus('complete');
     } catch (error) {
       console.error('株価情報の更新に失敗しました:', error);
+      toast.error('価格データの更新に失敗しました');
     } finally {
       setPriceLoading(false);
     }
@@ -258,28 +298,14 @@ export default function StocksPage() {
     try {
       setExchangeRateLoading(true);
       
-      // Server Actionを呼び出し
-      const { updateExchangeRateManually } = await import('@/app/actions/exchange-rate');
-      console.log('手動更新: Server Actionを呼び出します');
-      const result = await updateExchangeRateManually();
-      
-      console.log('手動更新: Server Action結果:', result);
-      
-      if (result.success && result.rate) {
-        setExchangeRate({
-          rate: result.rate,
-          lastUpdated: result.lastUpdated instanceof Date 
-            ? result.lastUpdated 
-            : new Date() // lastUpdatedがDateでない場合は現在時刻を使用
-        });
-        toast.success('為替レートを更新しました');
-      } else {
-        console.error('手動更新: 為替レート更新エラー:', result.error);
-        toast.error(result.error || '為替レートの更新に失敗しました');
-      }
+      // 為替レートを取得
+      const rate = await fetchUSDJPYRate();
+      setExchangeRate(rate);
+      console.log('為替レート手動更新完了:', rate);
+      toast.success('為替レートを更新しました');
     } catch (error) {
-      console.error('手動更新: 為替レートの更新に失敗しました:', error);
-      toast.error(error instanceof Error ? error.message : '為替レートの更新に失敗しました');
+      console.error('為替レートの手動更新に失敗しました:', error);
+      toast.error('為替レートの更新に失敗しました');
     } finally {
       setExchangeRateLoading(false);
     }
@@ -335,6 +361,15 @@ export default function StocksPage() {
             </svg>
             株価情報と為替レートは10分ごとに自動更新されます。手動で更新する場合は「株価を更新」ボタンをクリックしてください。
           </div>
+          {dataStatus === 'partial' && (
+            <div className="mt-2 flex items-center text-white">
+              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              株価情報を取得中です...
+            </div>
+          )}
         </div>
       </div>
 
@@ -454,16 +489,20 @@ export default function StocksPage() {
                                 </span>
                               </div>
                             </div>
-                          ) : priceLoading ? (
-                            <div className="flex items-center text-gray-500">
-                              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              読み込み中...
-                            </div>
                           ) : (
-                            <span className="text-gray-400 italic">取得できませんでした</span>
+                            <div className="flex items-center text-gray-500">
+                              {priceLoading ? (
+                                <>
+                                  <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  読み込み中...
+                                </>
+                              ) : (
+                                <span className="text-gray-400 italic">取得できませんでした</span>
+                              )}
+                            </div>
                           )
                         ) : (
                           // 株式の場合
@@ -491,16 +530,20 @@ export default function StocksPage() {
                                 </span>
                               </div>
                             </div>
-                          ) : priceLoading ? (
-                            <div className="flex items-center text-gray-500">
-                              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              読み込み中...
-                            </div>
                           ) : (
-                            <span className="text-gray-400 italic">取得できませんでした</span>
+                            <div className="flex items-center text-gray-500">
+                              {priceLoading ? (
+                                <>
+                                  <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  読み込み中...
+                                </>
+                              ) : (
+                                <span className="text-gray-400 italic">取得できませんでした</span>
+                              )}
+                            </div>
                           )
                         )}
                       </td>
@@ -508,58 +551,80 @@ export default function StocksPage() {
                         {stock.assetType === 'fund' ? (
                           // 投資信託の場合
                           <div className="font-bold text-gray-800">
-                            {calculateValue(
-                              stock, 
-                              undefined,
-                              fundPrices.get(stock.symbol),
-                              exchangeRate, 
-                              stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
-                            ).value?.toLocaleString()} 円
+                            {fundPrices.get(stock.symbol) ? (
+                              `${calculateValue(
+                                stock, 
+                                undefined,
+                                fundPrices.get(stock.symbol),
+                                exchangeRate, 
+                                stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
+                              ).value?.toLocaleString()} 円`
+                            ) : priceLoading ? (
+                              <div className="flex items-center text-gray-500">
+                                <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                計算中...
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic">-</span>
+                            )}
                           </div>
                         ) : (
                           // 株式の場合
-                          stockPrice ? (
-                            <div className="font-bold text-gray-800">
-                              {calculateValue(
-                                stock, 
-                                stockPrice,
-                                undefined,
-                                exchangeRate, 
-                                stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
-                              ).value?.toLocaleString()} 円
-                              {stockPrice.currency === 'USD' && (
-                                <div className="text-xs text-gray-500">
-                                  （為替レート: {exchangeRate.rate.toFixed(2)}円/$）
-                                  <div className="flex items-center">
-                                    <span>更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP')}</span>
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        updateExchangeRateManually();
-                                      }}
-                                      disabled={exchangeRateLoading}
-                                      className="ml-2 p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors"
-                                      title="為替レートを手動更新"
-                                    >
-                                      {exchangeRateLoading ? (
-                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                      ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                                        </svg>
-                                      )}
-                                    </button>
+                          <div className="font-bold text-gray-800">
+                            {stockPrice ? (
+                              <>
+                                {calculateValue(
+                                  stock, 
+                                  stockPrice,
+                                  undefined,
+                                  exchangeRate, 
+                                  stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
+                                ).value?.toLocaleString()} 円
+                                {stockPrice.currency === 'USD' && (
+                                  <div className="text-xs text-gray-500">
+                                    （為替レート: {exchangeRate.rate.toFixed(2)}円/$）
+                                    <div className="flex items-center">
+                                      <span>更新: {exchangeRate.lastUpdated.toLocaleString('ja-JP')}</span>
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          updateExchangeRateManually();
+                                        }}
+                                        disabled={exchangeRateLoading}
+                                        className="ml-2 p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors"
+                                        title="為替レートを手動更新"
+                                      >
+                                        {exchangeRateLoading ? (
+                                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                          </svg>
+                                        ) : (
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                          </svg>
+                                        )}
+                                      </button>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 italic">-</span>
-                          )
+                                )}
+                              </>
+                            ) : priceLoading ? (
+                              <div className="flex items-center text-gray-500">
+                                <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                計算中...
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic">-</span>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">

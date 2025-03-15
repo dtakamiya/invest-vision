@@ -1,6 +1,7 @@
 /**
  * 投資信託協会のウェブサイトから投資信託の基準価格を取得するユーティリティ
  */
+import { delay } from './utils';
 
 export interface FundPrice {
   isin: string;        // ISINコード
@@ -64,18 +65,20 @@ export async function fetchMultipleFundPrices(symbols: string[]): Promise<Map<st
   console.log(`複数の投資信託情報取得を開始: ${symbols.join(', ')}`);
   const results = new Map<string, FundPrice>();
   
-  // 並列処理で複数の投資信託情報を取得
-  const promises = symbols.map(symbol => fetchFundPrice(symbol));
-  const fundPrices = await Promise.all(promises);
-  
-  // 結果をMapに格納
-  for (let i = 0; i < symbols.length; i++) {
-    const fundPrice = fundPrices[i];
+  // 逐次処理で投資信託情報を取得（1秒間隔）
+  for (const symbol of symbols) {
+    const fundPrice = await fetchFundPrice(symbol);
     if (fundPrice) {
-      results.set(symbols[i], fundPrice);
-      console.log(`投資信託情報をMapに追加: ${symbols[i]}`);
+      results.set(symbol, fundPrice);
+      console.log(`投資信託情報をMapに追加: ${symbol}`);
     } else {
-      console.warn(`投資信託情報の取得に失敗: ${symbols[i]}`);
+      console.warn(`投資信託情報の取得に失敗: ${symbol}`);
+    }
+    
+    // 次のリクエストまで1秒待機（最後のリクエストでは待機しない）
+    if (symbols.indexOf(symbol) < symbols.length - 1) {
+      console.log(`次のリクエストまで1秒待機...`);
+      await delay(1000);
     }
   }
   
