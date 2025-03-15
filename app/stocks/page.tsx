@@ -8,6 +8,7 @@ import { fetchMultipleStockPrices, StockPrice } from "@/app/lib/stockApi";
 import { fetchMultipleFundPrices, FundPrice } from "@/app/lib/fundApi";
 import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
 import { toast } from 'react-hot-toast';
+import { calculateFundValue, calculateJPYStockValue, calculateUSDStockValue } from "@/app/utils/formatNumber";
 
 // 評価額を計算する関数
 function calculateValue(
@@ -20,7 +21,7 @@ function calculateValue(
   // 投資信託の場合
   if (stock.assetType === 'fund' && fundPrice) {
     return {
-      value: Math.round(fundPrice.price * quantity / 10000),
+      value: calculateFundValue(fundPrice.price, quantity),
       currency: '円'
     };
   }
@@ -31,13 +32,13 @@ function calculateValue(
   // USDの場合、為替レートを適用
   if (stockPrice.currency === 'USD') {
     return {
-      value: Math.round(stockPrice.price * quantity * exchangeRate.rate),
+      value: calculateUSDStockValue(stockPrice.price, quantity, exchangeRate.rate),
       currency: '円'
     };
   }
   
   return {
-    value: Math.round(stockPrice.price * quantity),
+    value: calculateJPYStockValue(stockPrice.price, quantity),
     currency: '円'
   };
 }

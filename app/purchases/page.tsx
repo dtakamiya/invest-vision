@@ -5,6 +5,7 @@ import { dbHelper, Purchase, Stock, Portfolio } from "@/app/lib/db";
 import { useEffect, useState } from "react";
 import { formatDateLocale } from "@/app/utils/formatDate";
 import { formatNumber, formatJPY } from "@/app/utils/formatCurrency";
+import { calculateFundValue, roundNumber } from "@/app/utils/formatNumber";
 
 type PurchaseWithStock = Purchase & {
   stock: Stock;
@@ -74,6 +75,21 @@ export default function PurchasesPage() {
     fetchPurchases();
   }, []);
 
+  // 総投資額を計算
+  const calculateTotalInvestment = () => {
+    return purchases.reduce((sum, purchase) => {
+      if (purchase.stock.assetType === 'fund') {
+        return sum + roundNumber(purchase.price * purchase.quantity / 10000);
+      }
+      return sum + purchase.price * purchase.quantity;
+    }, 0);
+  };
+
+  // 総手数料を計算
+  const calculateTotalFees = () => {
+    return purchases.reduce((sum, purchase) => sum + purchase.fee, 0);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -118,7 +134,7 @@ export default function PurchasesPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">総投資額</p>
-              <p className="text-2xl font-bold text-foreground">{formatNumber(totalInvestment)}円</p>
+              <p className="text-2xl font-bold text-foreground">{formatNumber(calculateTotalInvestment())}円</p>
             </div>
           </div>
         </div>
@@ -133,7 +149,7 @@ export default function PurchasesPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">総手数料</p>
-              <p className="text-2xl font-bold text-foreground">{formatNumber(totalFees)}円</p>
+              <p className="text-2xl font-bold text-foreground">{formatNumber(calculateTotalFees())}円</p>
             </div>
           </div>
         </div>
@@ -234,8 +250,8 @@ export default function PurchasesPage() {
                           </svg>
                           <span className="text-sm font-medium text-foreground">
                             {purchase.stock.assetType === 'fund' 
-                              ? Math.round(purchase.quantity * purchase.price / 10000).toLocaleString()
-                              : totalAmount.toLocaleString()}円
+                              ? formatNumber(calculateFundValue(purchase.price, purchase.quantity))
+                              : formatNumber(purchase.price * purchase.quantity)}円
                           </span>
                         </div>
                       </td>

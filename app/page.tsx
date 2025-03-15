@@ -9,6 +9,8 @@ import { toast } from 'react-hot-toast';
 import { migrateDataToDefaultPortfolio } from './actions/migrate-portfolio';
 import { formatCurrency, formatJPY, formatNumber } from "@/app/utils/formatCurrency";
 import { formatDate, formatDateLocale, formatDateTimeLocale } from "@/app/utils/formatDate";
+import { calculatePercentage, roundNumber } from "./utils/formatNumber";
+import { FundPrice, fetchMultipleFundPrices } from "@/app/lib/fundApi";
 
 interface Fund {
   id: number;
@@ -63,87 +65,55 @@ export default function Home() {
   const [totalDividends, setTotalDividends] = useState(0);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [stockPrices, setStockPrices] = useState<Map<string, StockPrice>>(new Map());
+  const [fundPrices, setFundPrices] = useState<Map<string, FundPrice>>(new Map());
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [exchangeRate, setExchangeRate] = useState<{ rate: number; lastUpdated: Date }>({ rate: 150, lastUpdated: new Date() });
   const [stockQuantities, setStockQuantities] = useState<Map<number, number>>(new Map());
   const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
   const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
   const [currentPortfolioId, setCurrentPortfolioId] = useState<number | null>(null);
 
-  // 投資国ごとの評価額を計算する関数
+  // 国別の総評価額を計算
   const calculateTotalValueByCountry = () => {
-    const japanTotal = stocks
-      .filter(stock => stock.country === '日本' && stock.id !== undefined)
-      .reduce((sum, stock) => {
-        const stockPrice = stockPrices.get(stock.symbol);
-        const quantity = stockQuantities.get(stock.id as number) || 0;
-        if (stockPrice && quantity > 0) {
-          // 投資信託の場合は保有口数 * 基準価格 / 10000 で計算
-          if (stock.assetType === 'fund') {
-            return sum + (stockPrice.price * quantity / 10000);
-          } else {
-            return sum + (stockPrice.price * quantity);
-          }
-        }
-        return sum;
-      }, 0);
+    let japanTotal = 0;
+    let usTotal = 0;
+    let total = 0;
 
-    const usTotal = stocks
-      .filter(stock => stock.country === '米国' && stock.id !== undefined)
-      .reduce((sum, stock) => {
-        const stockPrice = stockPrices.get(stock.symbol);
-        const quantity = stockQuantities.get(stock.id as number) || 0;
-        if (stockPrice && quantity > 0) {
-          // 投資信託の場合は保有口数 * 基準価格 / 10000 で計算
-          if (stock.assetType === 'fund') {
-            // 通貨がUSDの場合のみ為替レートを適用
-            if (stockPrice.currency === 'USD') {
-              return sum + (stockPrice.price * quantity * exchangeRate.rate / 10000);
-            } else {
-              return sum + (stockPrice.price * quantity / 10000);
-            }
-          } else {
-            // 株式の場合
-            // 通貨がUSDの場合のみ為替レートを適用
-            if (stockPrice.currency === 'USD') {
-              return sum + (stockPrice.price * quantity * exchangeRate.rate);
-            } else {
-              return sum + (stockPrice.price * quantity);
-            }
-          }
-        }
-        return sum;
-      }, 0);
+    // 各銘柄の評価額を計算して合計
+    stocks.forEach(stock => {
+      const stockPrice = stockPrices.get(stock.symbol);
+      const fundPrice = fundPrices.get(stock.symbol);
+      const quantity = stock.id !== undefined ? stockQuantities.get(stock.id) || 0 : 0;
 
-    const total = stocks
-      .filter(stock => stock.id !== undefined)
-      .reduce((sum, stock) => {
-        const stockPrice = stockPrices.get(stock.symbol);
-        const quantity = stockQuantities.get(stock.id as number) || 0;
-        if (stockPrice && quantity > 0) {
-          // 投資信託の場合は保有口数 * 基準価格 / 10000 で計算
-          if (stock.assetType === 'fund') {
-            if (stock.country === '米国' && stockPrice.currency === 'USD') {
-              return sum + (stockPrice.price * quantity * exchangeRate.rate / 10000);
-            } else {
-              return sum + (stockPrice.price * quantity / 10000);
-            }
-          } else {
-            // 株式の場合
-            if (stock.country === '米国' && stockPrice.currency === 'USD') {
-              return sum + (stockPrice.price * quantity * exchangeRate.rate);
-            } else {
-              return sum + (stockPrice.price * quantity);
-            }
-          }
+      if (stock.assetType === 'fund' && fundPrice) {
+        const value = fundPrice.price * quantity / 10000;
+        japanTotal += value;
+        total += value;
+      } else if (stockPrice && quantity > 0) {
+        const value = stockPrice.price * quantity;
+        if (stockPrice.currency === 'USD') {
+          const valueInJPY = value * exchangeRate.rate;
+          usTotal += valueInJPY;
+          total += valueInJPY;
+        } else {
+          japanTotal += value;
+          total += value;
         }
-        return sum;
-      }, 0);
+      }
+    });
 
     return {
-      japanTotal: Math.round(japanTotal),
-      usTotal: Math.round(usTotal),
-      total: Math.round(total)
+      japanTotal: roundNumber(japanTotal),
+      usTotal: roundNumber(usTotal),
+      total: roundNumber(total)
     };
+  };
+
+  // 総投資額を計算
+  const calculateTotalInvestment = () => {
+    return purchases.reduce((sum: number, purchase: Purchase) => {
+      return sum + roundNumber(purchase.price * purchase.quantity / 10000);
+    }, 0);
   };
 
   // リバランス提案を計算する関数
@@ -417,23 +387,33 @@ export default function Home() {
                   {/* 円グラフ（CSSで実装） */}
                   <div className="relative w-48 h-48">
                     {(() => {
-                      const japanPercent = Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100);
+                      const japanPercent = calculatePercentage(calculateTotalValueByCountry().japanTotal, calculateTotalValueByCountry().total);
                       const usPercent = 100 - japanPercent;
                       
                       return (
-                        <>
-                          <div 
-                            className="absolute inset-0 rounded-full shadow-inner"
-                            style={{
-                              background: `conic-gradient(#ef4444 0% ${japanPercent}%, #3b82f6 ${japanPercent}% 100%)`
-                            }}
-                          ></div>
-                          <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-sm font-bold text-gray-800">
-                              {formatNumber(calculateTotalValueByCountry().total, { notation: 'compact' })}円
+                        <div className="flex flex-col space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-700">日本株 ({calculatePercentage(calculateTotalValueByCountry().japanTotal, calculateTotalValueByCountry().total)}%)</span>
+                            <span className="text-gray-700">{formatJPY(calculateTotalValueByCountry().japanTotal)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-700">米国株 ({calculatePercentage(calculateTotalValueByCountry().usTotal, calculateTotalValueByCountry().total)}%)</span>
+                            <span className="text-gray-700">{formatJPY(calculateTotalValueByCountry().usTotal)}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div className="bg-blue-600 h-2.5 rounded-full" style={{
+                              width: `${calculatePercentage(calculateTotalValueByCountry().japanTotal, calculateTotalValueByCountry().total)}%`
+                            }}></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>
+                              {calculatePercentage(calculateTotalValueByCountry().japanTotal, calculateTotalValueByCountry().total)}%
+                            </span>
+                            <span>
+                              {calculatePercentage(calculateTotalValueByCountry().usTotal, calculateTotalValueByCountry().total)}%
                             </span>
                           </div>
-                        </>
+                        </div>
                       );
                     })()}
                   </div>

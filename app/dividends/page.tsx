@@ -4,7 +4,8 @@ import Link from "next/link";
 import { dbHelper, Dividend, Stock, Portfolio } from "@/app/lib/db";
 import { useEffect, useState } from "react";
 import { formatDateLocale } from "@/app/utils/formatDate";
-import { formatNumber } from "@/app/utils/formatCurrency";
+import { formatJPY, formatNumber } from "@/app/utils/formatCurrency";
+import { roundNumber } from "@/app/utils/formatNumber";
 
 type DividendWithStock = Dividend & {
   stock: Stock;
@@ -140,7 +141,7 @@ export default function DividendsPage() {
               <p className="text-sm text-muted-foreground font-medium">平均配当金額</p>
               <p className="text-2xl font-bold text-foreground">
                 {dividends.length > 0 
-                  ? formatNumber(Math.round(totalDividends / dividends.length))
+                  ? formatNumber(roundNumber(totalDividends / dividends.length))
                   : 0}円
               </p>
             </div>
