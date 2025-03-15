@@ -645,7 +645,8 @@ export default function StocksPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="font-bold text-gray-800">
-                          {stock.id !== undefined ? stockQuantities.get(stock.id as number)?.toLocaleString() || 0 : 0}株
+                          {stock.id !== undefined ? stockQuantities.get(stock.id as number)?.toLocaleString() || 0 : 0}
+                          {stock.assetType === 'fund' ? '口' : '株'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
