@@ -178,6 +178,9 @@ export default function Home() {
         // 基本データの取得が完了したら、画面を表示
         setLoading(false);
 
+        // DBから株価情報を取得
+        await loadPricesFromDB(stocksData);
+        
         // 株価情報の取得（非同期）
         if (stocksData.length > 0) {
           fetchPriceData(stocksData);
@@ -244,6 +247,38 @@ export default function Home() {
     fetchData();
   }, []);
 
+  // DBから株価情報を取得する関数
+  const loadPricesFromDB = async (stocksData: Stock[]) => {
+    try {
+      const pricesMap = new Map<string, StockPrice>();
+      
+      // 各銘柄の最新の株価情報を取得
+      for (const stock of stocksData) {
+        if (!stock.id) continue;
+        
+        const latestPrice = await dbHelper.stockPrices.findLatestByStockId(stock.id);
+        if (latestPrice) {
+          pricesMap.set(stock.symbol, {
+            symbol: latestPrice.symbol,
+            price: latestPrice.price,
+            change: latestPrice.change,
+            changePercent: latestPrice.changePercent,
+            currency: latestPrice.currency,
+            lastUpdated: new Date(latestPrice.lastUpdated)
+          });
+          console.log(`DBから株価情報を取得: ${stock.symbol}, 価格: ${latestPrice.price}${latestPrice.currency}`);
+        }
+      }
+      
+      // 株価情報をセット
+      setStockPrices(pricesMap);
+      
+      console.log(`DBから株価情報を取得完了: ${pricesMap.size}件`);
+    } catch (error) {
+      console.error('DBからの株価情報取得に失敗しました:', error);
+    }
+  };
+
   // 株価と為替レートを非同期で取得する関数
   const fetchPriceData = async (stocksData: Stock[]) => {
     try {
@@ -252,8 +287,16 @@ export default function Home() {
       if (stocksData.length > 0) {
         const symbols = stocksData.map(stock => stock.symbol);
         const prices = await fetchMultipleStockPrices(symbols);
-        setStockPrices(prices);
-        console.log(`株価情報取得完了: ${prices.size}件`);
+        
+        // 既存の株価情報と統合
+        const updatedPrices = new Map(stockPrices);
+        prices.forEach((price, symbol) => {
+          console.log(`価格情報を更新: ${symbol}, 価格: ${price.price}${price.currency}`);
+          updatedPrices.set(symbol, price);
+        });
+        
+        setStockPrices(updatedPrices);
+        console.log(`株価情報取得完了: ${prices.size}件, 全体: ${updatedPrices.size}件`);
       }
       
       // 為替レートの取得（株価取得の後に行う）
@@ -274,7 +317,16 @@ export default function Home() {
         if (stocks.length > 0) {
           const symbols = stocks.map(stock => stock.symbol);
           const prices = await fetchMultipleStockPrices(symbols);
-          setStockPrices(prices);
+          
+          // 既存の株価情報と統合
+          const updatedPrices = new Map(stockPrices);
+          prices.forEach((price, symbol) => {
+            console.log(`価格情報を更新: ${symbol}, 価格: ${price.price}${price.currency}`);
+            updatedPrices.set(symbol, price);
+          });
+          
+          setStockPrices(updatedPrices);
+          console.log(`価格情報更新完了: ${prices.size}件, 全体: ${updatedPrices.size}件`);
         }
         
         // 為替レートの取得（株価取得の後に行う）
@@ -292,7 +344,7 @@ export default function Home() {
     const interval = setInterval(updatePrices, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [stocks]);
+  }, [stocks, stockPrices]);
 
   return (
     <div className="flex flex-col gap-12 animate-fadeIn">
