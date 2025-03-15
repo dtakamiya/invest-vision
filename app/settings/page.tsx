@@ -39,43 +39,43 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">設定</h1>
+      <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">設定</h1>
       
       {/* データ統計 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">登録銘柄数</h3>
-          <p className="text-2xl font-semibold">{stats.stocks}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+        <div className="glass hover-lift p-6 rounded-xl">
+          <h3 className="text-sm font-medium text-gray-500 mb-2">登録銘柄数</h3>
+          <p className="text-3xl font-bold text-indigo-600">{stats.stocks}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">購入記録数</h3>
-          <p className="text-2xl font-semibold">{stats.purchases}</p>
+        <div className="glass hover-lift p-6 rounded-xl">
+          <h3 className="text-sm font-medium text-gray-500 mb-2">購入記録数</h3>
+          <p className="text-3xl font-bold text-purple-600">{stats.purchases}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">配当記録数</h3>
-          <p className="text-2xl font-semibold">{stats.dividends}</p>
+        <div className="glass hover-lift p-6 rounded-xl">
+          <h3 className="text-sm font-medium text-gray-500 mb-2">配当記録数</h3>
+          <p className="text-3xl font-bold text-green-600">{stats.dividends}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">投資資金記録数</h3>
-          <p className="text-2xl font-semibold">{stats.investmentFunds}</p>
+        <div className="glass hover-lift p-6 rounded-xl">
+          <h3 className="text-sm font-medium text-gray-500 mb-2">投資資金記録数</h3>
+          <p className="text-3xl font-bold text-blue-600">{stats.investmentFunds}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">ポートフォリオ数</h3>
-          <p className="text-2xl font-semibold">{stats.portfolios}</p>
+        <div className="glass hover-lift p-6 rounded-xl">
+          <h3 className="text-sm font-medium text-gray-500 mb-2">ポートフォリオ数</h3>
+          <p className="text-3xl font-bold text-amber-600">{stats.portfolios}</p>
         </div>
       </div>
 
       {/* ポートフォリオ管理 */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-4">ポートフォリオ管理</h2>
-        <p className="text-gray-600 mb-4">
+      <div className="neumorphic p-8 mb-10">
+        <h2 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">ポートフォリオ管理</h2>
+        <p className="text-gray-600 mb-6">
           複数のポートフォリオを作成して、投資を分けて管理することができます。
           各ポートフォリオには、銘柄、購入記録、配当金記録、投資資金を関連付けることができます。
         </p>
         <div className="flex flex-wrap gap-3">
           <Link
             href="/portfolios"
-            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="gradient-btn hover-scale inline-flex items-center"
           >
             ポートフォリオ管理へ
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
@@ -86,10 +86,14 @@ export default function SettingsPage() {
       </div>
 
       {/* データ管理 */}
-      <DataManagement />
+      <div className="card-3d mb-10">
+        <div className="card-3d-content">
+          <DataManagement />
+        </div>
+      </div>
 
       {/* データベース編集 */}
-      <div className="mt-8">
+      <div className="mt-10">
         <DbEditor />
       </div>
     </div>

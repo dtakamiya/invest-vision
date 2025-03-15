@@ -546,10 +546,10 @@ export default function Home() {
           {/* ポートフォリオ情報 */}
           {currentPortfolio && (
             <section className="py-4">
-              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+              <div className="glass p-8 rounded-xl hover-lift">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-800">{currentPortfolio.name}</h2>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">{currentPortfolio.name}</h2>
                     {currentPortfolio.description && (
                       <p className="text-gray-600 mt-1">{currentPortfolio.description}</p>
                     )}
@@ -557,7 +557,7 @@ export default function Home() {
                   <div className="mt-4 md:mt-0">
                     <Link
                       href="/portfolios"
-                      className="inline-flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
+                      className="inline-flex items-center px-4 py-2 neumorphic hover-scale text-indigo-700 rounded-lg transition-all"
                     >
                       ポートフォリオを変更
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -571,9 +571,9 @@ export default function Home() {
           )}
 
           <section className="py-6">
-            <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">投資概要</h2>
+            <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">投資概要</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="glass p-6 rounded-xl hover-lift">
                 <h3 className="text-lg font-medium text-gray-500 mb-2">投資資金</h3>
                 <p className="text-xl font-bold text-blue-600">
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds)}
@@ -581,7 +581,7 @@ export default function Home() {
                 <div className="mt-4">
                   <Link
                     href="/funds"
-                    className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors flex items-center"
+                    className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors flex items-center hover-scale"
                   >
                     詳細を見る
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -592,7 +592,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="glass p-6 rounded-xl hover-lift">
                 <h3 className="text-lg font-medium text-gray-500 mb-2">投資可能額</h3>
                 <p className="text-xl font-bold text-teal-600">
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds - totalInvestment + totalDividends)}
@@ -607,7 +607,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="glass p-6 rounded-xl hover-lift">
                 <h3 className="text-lg font-medium text-gray-500 mb-2">投資総額</h3>
                 <p className="text-xl font-bold text-green-600">
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalInvestment)}
@@ -615,7 +615,7 @@ export default function Home() {
                 <div className="mt-4">
                   <Link
                     href="/purchases"
-                    className="text-green-600 text-sm font-medium hover:text-green-800 transition-colors flex items-center"
+                    className="text-green-600 text-sm font-medium hover:text-green-800 transition-colors flex items-center hover-scale"
                   >
                     詳細を見る
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -626,7 +626,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="glass p-6 rounded-xl hover-lift">
                 <h3 className="text-lg font-medium text-gray-500 mb-2">配当金合計</h3>
                 <p className="text-xl font-bold text-amber-600">
                   {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalDividends)}
@@ -634,7 +634,7 @@ export default function Home() {
                 <div className="mt-4">
                   <Link
                     href="/dividends"
-                    className="text-amber-600 text-sm font-medium hover:text-amber-800 transition-colors flex items-center"
+                    className="text-amber-600 text-sm font-medium hover:text-amber-800 transition-colors flex items-center hover-scale"
                   >
                     詳細を見る
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -645,7 +645,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="glass p-6 rounded-xl hover-lift">
                 <h3 className="text-lg font-medium text-gray-500 mb-2">投資利回り</h3>
                 <p className="text-xl font-bold text-purple-600">
                   {totalInvestment > 0 
@@ -668,110 +668,118 @@ export default function Home() {
 
       {/* 機能紹介セクション */}
       <section className="py-8">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">主な機能</h2>
+        <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">主な機能</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="bg-white p-8 rounded-xl shadow-md card-hover border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-                <path d="M12 18V6" />
-              </svg>
+          <div className="glass p-8 rounded-xl card-3d">
+            <div className="card-3d-content">
+              <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6 hover-scale">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                  <path d="M12 18V6" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">投資資金管理</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                投資に使用する資金を管理します。入金と出金を記録して、投資可能な資金を把握できます。
+              </p>
+              <Link
+                href="/funds"
+                className="inline-flex items-center text-blue-600 font-medium hover:text-blue-800 transition-colors hover-scale"
+              >
+                投資資金へ
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">投資資金管理</h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              投資に使用する資金を管理します。入金と出金を記録して、投資可能な資金を把握できます。
-            </p>
-            <Link
-              href="/funds"
-              className="inline-flex items-center text-blue-600 font-medium hover:text-blue-800 transition-colors"
-            >
-              投資資金へ
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </Link>
           </div>
 
-          <div className="bg-white p-8 rounded-xl shadow-md card-hover border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <div className="w-14 h-14 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-              </svg>
+          <div className="glass p-8 rounded-xl card-3d">
+            <div className="card-3d-content">
+              <div className="w-14 h-14 bg-indigo-100 rounded-lg flex items-center justify-center mb-6 hover-scale">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">銘柄管理</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                保有している株式銘柄を簡単に管理できます。銘柄コードや名前を登録して、購入記録や配当金記録と紐づけます。
+              </p>
+              <Link
+                href="/stocks"
+                className="inline-flex items-center text-indigo-600 font-medium hover:text-indigo-800 transition-colors hover-scale"
+              >
+                銘柄一覧へ
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">銘柄管理</h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              保有している株式銘柄を簡単に管理できます。銘柄コードや名前を登録して、購入記録や配当金記録と紐づけます。
-            </p>
-            <Link
-              href="/stocks"
-              className="inline-flex items-center text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
-            >
-              銘柄一覧へ
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </Link>
           </div>
 
-          <div className="bg-white p-8 rounded-xl shadow-md card-hover border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <div className="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                <rect x="9" y="3" width="6" height="4" rx="2" />
-                <path d="M9 14l2 2 4-4" />
-              </svg>
+          <div className="glass p-8 rounded-xl card-3d">
+            <div className="card-3d-content">
+              <div className="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center mb-6 hover-scale">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                  <rect x="9" y="3" width="6" height="4" rx="2" />
+                  <path d="M9 14l2 2 4-4" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">購入記録</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                株式の購入記録を管理します。購入日、数量、価格、手数料などを記録して、投資履歴を把握できます。
+              </p>
+              <Link
+                href="/purchases"
+                className="inline-flex items-center text-green-600 font-medium hover:text-green-800 transition-colors hover-scale"
+              >
+                購入記録へ
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">購入記録</h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              株式の購入記録を管理します。購入日、数量、価格、手数料などを記録して、投資履歴を把握できます。
-            </p>
-            <Link
-              href="/purchases"
-              className="inline-flex items-center text-green-600 font-medium hover:text-green-800 transition-colors"
-            >
-              購入記録へ
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </Link>
           </div>
 
-          <div className="bg-white p-8 rounded-xl shadow-md card-hover border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <div className="w-14 h-14 bg-amber-100 rounded-lg flex items-center justify-center mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-                <path d="M12 18V6" />
-              </svg>
+          <div className="glass p-8 rounded-xl card-3d">
+            <div className="card-3d-content">
+              <div className="w-14 h-14 bg-amber-100 rounded-lg flex items-center justify-center mb-6 hover-scale">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                  <path d="M12 18V6" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">配当金記録</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                受け取った配当金を記録します。受取日、金額、税額などを記録して、配当収入を管理できます。
+              </p>
+              <Link
+                href="/dividends"
+                className="inline-flex items-center text-amber-600 font-medium hover:text-amber-800 transition-colors hover-scale"
+              >
+                配当金記録へ
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">配当金記録</h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              受け取った配当金を記録します。受取日、金額、税額などを記録して、配当収入を管理できます。
-            </p>
-            <Link
-              href="/dividends"
-              className="inline-flex items-center text-amber-600 font-medium hover:text-amber-800 transition-colors"
-            >
-              配当金記録へ
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </Link>
           </div>
         </div>
       </section>
 
       {/* 使い方セクション */}
-      <section className="bg-gradient-to-r from-gray-50 to-gray-100 p-8 rounded-xl">
-        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">使い方</h2>
+      <section className="glass-dark p-8 rounded-xl">
+        <h2 className="text-3xl font-bold mb-8 text-center bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">使い方</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center text-center transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+          <div className="glass p-6 rounded-lg flex flex-col items-center text-center hover-lift">
+            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4 hover-pulse">
               <span className="text-xl font-bold text-indigo-600">1</span>
             </div>
             <h3 className="text-lg font-semibold mb-2">投資資金の登録</h3>
@@ -779,7 +787,7 @@ export default function Home() {
             <div className="mt-4 w-full">
               <Link
                 href="/funds"
-                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50"
+                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 neumorphic rounded-lg hover-scale"
               >
                 投資資金へ
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -790,8 +798,8 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center text-center transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+          <div className="glass p-6 rounded-lg flex flex-col items-center text-center hover-lift">
+            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4 hover-pulse">
               <span className="text-xl font-bold text-indigo-600">2</span>
             </div>
             <h3 className="text-lg font-semibold mb-2">銘柄登録</h3>
@@ -799,7 +807,7 @@ export default function Home() {
             <div className="mt-4 w-full">
               <Link
                 href="/stocks"
-                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50"
+                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 neumorphic rounded-lg hover-scale"
               >
                 銘柄一覧へ
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -810,8 +818,8 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center text-center transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+          <div className="glass p-6 rounded-lg flex flex-col items-center text-center hover-lift">
+            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4 hover-pulse">
               <span className="text-xl font-bold text-indigo-600">3</span>
             </div>
             <h3 className="text-lg font-semibold mb-2">購入記録</h3>
@@ -819,7 +827,7 @@ export default function Home() {
             <div className="mt-4 w-full">
               <Link
                 href="/purchases"
-                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50"
+                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 neumorphic rounded-lg hover-scale"
               >
                 購入記録へ
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -830,8 +838,8 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center text-center transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+          <div className="glass p-6 rounded-lg flex flex-col items-center text-center hover-lift">
+            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4 hover-pulse">
               <span className="text-xl font-bold text-indigo-600">4</span>
             </div>
             <h3 className="text-lg font-semibold mb-2">配当金記録</h3>
@@ -839,7 +847,7 @@ export default function Home() {
             <div className="mt-4 w-full">
               <Link
                 href="/dividends"
-                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50"
+                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 neumorphic rounded-lg hover-scale"
               >
                 配当金記録へ
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -850,8 +858,8 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center text-center transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+          <div className="glass p-6 rounded-lg flex flex-col items-center text-center hover-lift">
+            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4 hover-pulse">
               <span className="text-xl font-bold text-indigo-600">5</span>
             </div>
             <h3 className="text-lg font-semibold mb-2">管理</h3>
@@ -859,7 +867,7 @@ export default function Home() {
             <div className="mt-4 w-full">
               <Link
                 href="/settings"
-                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50"
+                className="inline-flex items-center justify-center w-full text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors py-2 neumorphic rounded-lg hover-scale"
               >
                 設定ページへ
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -873,17 +881,17 @@ export default function Home() {
       </section>
 
       {/* IndexedDBについての説明 */}
-      <section className="bg-gradient-to-br from-indigo-50 to-purple-50 p-8 rounded-xl mb-8">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">データの保存について</h2>
+      <section className="glass p-8 rounded-xl mb-8">
+        <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">データの保存について</h2>
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-            <p className="text-gray-700 mb-6 text-center text-lg">
-              このアプリケーションでは、すべてのデータはブラウザの<span className="font-semibold text-indigo-700">IndexedDB</span>に保存されます。
+          <div className="glass-dark p-6 rounded-xl mb-8 hover-lift">
+            <p className="text-gray-300 mb-6 text-center text-lg">
+              このアプリケーションでは、すべてのデータはブラウザの<span className="font-semibold text-indigo-400">IndexedDB</span>に保存されます。
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <div className="glass p-6 rounded-lg hover-lift">
               <h3 className="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -892,28 +900,34 @@ export default function Home() {
                 メリット
               </h3>
               <ul className="space-y-3">
-                <li className="flex items-start">
+                <li className="flex items-start hover-scale">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                   <span>インターネット接続がなくても使用できます</span>
                 </li>
-                <li className="flex items-start">
+                <li className="flex items-start hover-scale">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
-                  <span>サーバーにデータを送信しないため、プライバシーが保護されます</span>
+                  <span>データはあなたのデバイスにのみ保存され、サーバーには送信されません</span>
                 </li>
-                <li className="flex items-start">
+                <li className="flex items-start hover-scale">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
-                  <span>高速な動作が可能です</span>
+                  <span>プライバシーが保護されます</span>
+                </li>
+                <li className="flex items-start hover-scale">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>高速に動作します</span>
                 </li>
               </ul>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <div className="glass p-6 rounded-lg hover-lift">
               <h3 className="text-xl font-semibold text-amber-700 mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"></circle>
@@ -923,58 +937,46 @@ export default function Home() {
                 注意点
               </h3>
               <ul className="space-y-3">
-                <li className="flex items-start">
+                <li className="flex items-start hover-scale">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
-                  <span>ブラウザのデータを消去すると、保存したデータも削除されます</span>
+                  <span>ブラウザのデータを削除すると、保存したデータも削除されます</span>
                 </li>
-                <li className="flex items-start">
+                <li className="flex items-start hover-scale">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
-                  <span>異なるブラウザやデバイス間でデータは共有されません</span>
+                  <span>異なるデバイス間でデータは同期されません</span>
                 </li>
-                <li className="flex items-start">
+                <li className="flex items-start hover-scale">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
-                  <span>定期的にデータのバックアップをお勧めします</span>
+                  <span>定期的にデータをエクスポートしてバックアップすることをお勧めします</span>
                 </li>
               </ul>
             </div>
           </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          
+          <div className="text-center">
+            <Link
+              href="/settings"
+              className="inline-flex items-center px-6 py-3 gradient-btn hover-scale"
+            >
+              データのエクスポート/インポート
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
-              データのバックアップ
-            </h3>
-            <p className="text-gray-700 mb-4">
-              設定ページからデータのエクスポート・インポートが可能です。定期的にデータをバックアップすることをお勧めします。
-            </p>
-            <div className="flex justify-center">
-              <Link
-                href="/settings"
-                className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-                設定ページへ
-              </Link>
-            </div>
+            </Link>
           </div>
         </div>
       </section>

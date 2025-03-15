@@ -63,11 +63,11 @@ export default function Header() {
   };
   
   return (
-    <header className="bg-white shadow-sm">
+    <header className="glass sticky top-0 z-50 backdrop-blur-md bg-white/80 shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center">
           <div className="flex justify-between items-center mb-4 md:mb-0">
-            <Link href="/" className="text-xl font-bold text-gray-800">
+            <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text hover-scale">
               InvestVision
             </Link>
             
@@ -75,36 +75,42 @@ export default function Header() {
             <div className="relative ml-4">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center px-3 py-2 bg-gray-100 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-200"
+                className="flex items-center px-4 py-2 neumorphic hover-lift text-sm font-medium text-gray-700"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
                 </svg>
                 {isLoading ? (
-                  <span>読み込み中...</span>
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    読み込み中...
+                  </span>
                 ) : currentPortfolio ? (
-                  <span>{currentPortfolio.name}</span>
+                  <span className="font-medium">{currentPortfolio.name}</span>
                 ) : (
                   <span>ポートフォリオなし</span>
                 )}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </button>
               
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10">
-                  <div className="py-1">
+                <div className="absolute right-0 mt-2 w-64 glass rounded-xl shadow-lg z-10 overflow-hidden">
+                  <div className="py-2">
                     {portfolios.length > 0 ? (
                       <>
                         {portfolios.map((portfolio) => (
                           <button
                             key={portfolio.id}
                             onClick={() => selectPortfolio(portfolio)}
-                            className={`block w-full text-left px-4 py-2 text-sm ${
+                            className={`block w-full text-left px-4 py-2 text-sm hover-scale transition-all ${
                               currentPortfolio?.id === portfolio.id
-                                ? 'bg-indigo-100 text-indigo-700'
-                                : 'text-gray-700 hover:bg-gray-100'
+                                ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-medium'
+                                : 'text-gray-700 hover:bg-gray-50'
                             }`}
                           >
                             {portfolio.name}
@@ -113,7 +119,7 @@ export default function Header() {
                         <div className="border-t border-gray-100 my-1"></div>
                         <Link
                           href="/portfolios"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="block px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 hover-scale transition-all"
                           onClick={() => setIsDropdownOpen(false)}
                         >
                           ポートフォリオ管理
@@ -142,16 +148,16 @@ export default function Header() {
             {/* モバイル用メニューボタン（実装は省略） */}
           </div>
           
-          <nav className="flex flex-wrap items-center gap-1 md:gap-2">
+          <nav className="flex flex-wrap items-center gap-2 md:gap-3">
             <Link
               href="/"
-              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              className={`flex items-center px-4 py-2 rounded-xl text-sm font-medium hover-scale transition-all ${
                 isActive('/') 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'neumorphic text-indigo-700' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${isActive('/') ? 'text-indigo-600' : 'text-gray-500'}`} viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
               </svg>
               ホーム
@@ -159,13 +165,13 @@ export default function Header() {
             
             <Link
               href="/stocks"
-              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              className={`flex items-center px-4 py-2 rounded-xl text-sm font-medium hover-scale transition-all ${
                 isActive('/stocks') 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'neumorphic text-indigo-700' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${isActive('/stocks') ? 'text-indigo-600' : 'text-gray-500'}`} viewBox="0 0 20 20" fill="currentColor">
                 <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
               </svg>
               株式
@@ -173,13 +179,13 @@ export default function Header() {
             
             <Link
               href="/purchases"
-              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              className={`flex items-center px-4 py-2 rounded-xl text-sm font-medium hover-scale transition-all ${
                 isActive('/purchases') 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'neumorphic text-indigo-700' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${isActive('/purchases') ? 'text-indigo-600' : 'text-gray-500'}`} viewBox="0 0 20 20" fill="currentColor">
                 <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
               </svg>
               購入記録
