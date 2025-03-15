@@ -18,6 +18,14 @@ function calculateValue(
   // 株価情報がない場合や数量が0の場合
   if (!stockPrice || quantity === 0) return { value: null, currency: '円' };
   
+  // 投資信託の場合は「口数×現在値/10000」で計算
+  if (stock.assetType === 'fund') {
+    return {
+      value: Math.round(stockPrice.price * quantity / 10000),
+      currency: '円'
+    };
+  }
+  
   // USDの場合、為替レートを適用
   if (stockPrice.currency === 'USD') {
     return {
