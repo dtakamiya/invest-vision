@@ -2,6 +2,7 @@
 
 // データベースの型定義
 export type Country = '日本' | '米国';
+export type AssetType = 'stock' | 'fund';
 
 export interface Portfolio {
   id?: number;
@@ -17,7 +18,7 @@ export interface Stock {
   symbol: string;
   name: string;
   country: Country;  // 投資国（日本/米国）
-  assetType: 'stock' | 'fund';  // 資産タイプ（株式/投資信託）
+  assetType: AssetType;  // 資産タイプ（株式/投資信託）
   initialPurchaseDate?: Date;  // 初期購入日
   initialQuantity?: number;    // 初期購入数
   initialPrice?: number;       // 初期購入単価
@@ -73,6 +74,20 @@ export interface InvestmentFund {
   updatedAt?: Date;
 }
 
+// 株価情報
+export interface StockPriceData {
+  id?: number;
+  stockId: number;
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  currency: string;
+  lastUpdated: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // データベースヘルパーの型定義
 export interface DbOperations<T> {
   findMany(options?: { 
@@ -97,6 +112,17 @@ export interface DbHelper {
   purchases: DbOperations<Purchase>;
   dividends: DbOperations<Dividend>;
   investmentFunds: InvestmentFundOperations;
+  stockPrices: {
+    findMany(options?: { 
+      where?: { stockId?: number, symbol?: string },
+      orderBy?: { [key: string]: 'asc' | 'desc' }
+    }): Promise<StockPriceData[]>;
+    findLatestBySymbol(symbol: string): Promise<StockPriceData | null>;
+    findLatestByStockId(stockId: number): Promise<StockPriceData | null>;
+    add(stockPrice: Omit<StockPriceData, 'id' | 'createdAt' | 'updatedAt'>): Promise<number>;
+    update(id: number, stockPrice: Partial<Omit<StockPriceData, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
+    delete(id: number): Promise<void>;
+  };
 }
 
 // データのエクスポート・インポート用の型定義
@@ -112,7 +138,7 @@ export interface ExportData {
 
 // データベース名とバージョン
 const DB_NAME = 'investVisionDB';
-const DB_VERSION = 8;  // バージョンを8に更新
+const DB_VERSION = 9;  // バージョンを9に更新
 
 // データベース接続を開く
 export function openDB(): Promise<IDBDatabase> {
@@ -279,6 +305,17 @@ export function openDB(): Promise<IDBDatabase> {
       if (oldVersion < 8) {
         console.log('データベースをバージョン8に更新しています...');
         // ここでは構造的な変更はなく、アプリケーションコードの修正に対応するためのバージョンアップ
+      }
+
+      // バージョン9への更新：株価情報テーブルを追加
+      if (oldVersion < 9) {
+        // StockPrices オブジェクトストアの作成
+        if (!db.objectStoreNames.contains('stockPrices')) {
+          const stockPricesStore = db.createObjectStore('stockPrices', { keyPath: 'id', autoIncrement: true });
+          stockPricesStore.createIndex('stockId', 'stockId', { unique: false });
+          stockPricesStore.createIndex('symbol', 'symbol', { unique: false });
+          stockPricesStore.createIndex('lastUpdated', 'lastUpdated', { unique: false });
+        }
       }
     };
   });
@@ -1129,6 +1166,210 @@ export const dbHelper: DbHelper = {
           return total - fund.amount;
         }
       }, 0);
+    }
+  },
+  
+  stockPrices: {
+    async findMany(options: { 
+      where?: { stockId?: number, symbol?: string },
+      orderBy?: { [key: string]: 'asc' | 'desc' }
+    } = {}): Promise<StockPriceData[]> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['stockPrices'], 'readonly');
+        const store = transaction.objectStore('stockPrices');
+        
+        let request;
+        if (options.where?.stockId) {
+          const index = store.index('stockId');
+          request = index.getAll(options.where.stockId);
+        } else if (options.where?.symbol) {
+          const index = store.index('symbol');
+          request = index.getAll(options.where.symbol);
+        } else {
+          request = store.getAll();
+        }
+        
+        request.onsuccess = () => {
+          let results = request.result;
+          
+          // 並び替え
+          if (options.orderBy) {
+            const [field, direction] = Object.entries(options.orderBy)[0];
+            results = results.sort((a, b) => {
+              if (direction === 'asc') {
+                return a[field] > b[field] ? 1 : -1;
+              } else {
+                return a[field] < b[field] ? 1 : -1;
+              }
+            });
+          }
+          
+          resolve(results);
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      });
+    },
+    
+    async findLatestBySymbol(symbol: string): Promise<StockPriceData | null> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['stockPrices'], 'readonly');
+        const store = transaction.objectStore('stockPrices');
+        const index = store.index('symbol');
+        const request = index.getAll(symbol);
+        
+        request.onsuccess = () => {
+          const results = request.result;
+          if (results.length === 0) {
+            resolve(null);
+            return;
+          }
+          
+          // 最新の株価情報を取得
+          const latestPrice = results.sort((a, b) => 
+            new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+          )[0];
+          
+          resolve(latestPrice);
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      });
+    },
+    
+    async findLatestByStockId(stockId: number): Promise<StockPriceData | null> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['stockPrices'], 'readonly');
+        const store = transaction.objectStore('stockPrices');
+        const index = store.index('stockId');
+        const request = index.getAll(stockId);
+        
+        request.onsuccess = () => {
+          const results = request.result;
+          if (results.length === 0) {
+            resolve(null);
+            return;
+          }
+          
+          // 最新の株価情報を取得
+          const latestPrice = results.sort((a, b) => 
+            new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+          )[0];
+          
+          resolve(latestPrice);
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      });
+    },
+    
+    async add(stockPrice: Omit<StockPriceData, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['stockPrices'], 'readwrite');
+        const store = transaction.objectStore('stockPrices');
+        const now = new Date();
+        const request = store.add({
+          ...stockPrice,
+          createdAt: now,
+          updatedAt: now
+        });
+        
+        request.onsuccess = () => {
+          resolve(request.result as number);
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      });
+    },
+    
+    async update(id: number, stockPrice: Partial<Omit<StockPriceData, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['stockPrices'], 'readwrite');
+        const store = transaction.objectStore('stockPrices');
+        const getRequest = store.get(id);
+        
+        getRequest.onsuccess = () => {
+          const data = getRequest.result;
+          if (!data) {
+            reject(new Error(`ID ${id} の株価情報が見つかりません`));
+            return;
+          }
+          
+          const updatedData = {
+            ...data,
+            ...stockPrice,
+            updatedAt: new Date()
+          };
+          
+          const updateRequest = store.put(updatedData);
+          
+          updateRequest.onsuccess = () => {
+            resolve();
+          };
+          
+          updateRequest.onerror = () => {
+            reject(updateRequest.error);
+          };
+        };
+        
+        getRequest.onerror = () => {
+          reject(getRequest.error);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      });
+    },
+    
+    async delete(id: number): Promise<void> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['stockPrices'], 'readwrite');
+        const store = transaction.objectStore('stockPrices');
+        const request = store.delete(id);
+        
+        request.onsuccess = () => {
+          resolve();
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      });
     }
   }
 };

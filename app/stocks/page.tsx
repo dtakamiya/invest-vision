@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { dbHelper, Stock, Purchase, Portfolio } from "@/app/lib/db";
+import { dbHelper, Stock, Purchase, Portfolio, StockPriceData } from "@/app/lib/db";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchMultipleStockPrices, StockPrice } from "@/app/lib/stockApi";
@@ -140,6 +140,9 @@ export default function StocksPage() {
         setLoading(false);
         setDataStatus('partial');
         
+        // DBから株価情報を取得
+        await loadPricesFromDB(stocksData);
+        
         // 価格データを非同期で取得
         fetchPriceData(stocksData);
         
@@ -152,6 +155,38 @@ export default function StocksPage() {
 
     fetchBasicData();
   }, []);
+
+  // DBから株価情報を取得する関数
+  const loadPricesFromDB = async (stocksData: Stock[]) => {
+    try {
+      const pricesMap = new Map<string, StockPrice>();
+      
+      // 各銘柄の最新の株価情報を取得
+      for (const stock of stocksData) {
+        if (!stock.id) continue;
+        
+        const latestPrice = await dbHelper.stockPrices.findLatestByStockId(stock.id);
+        if (latestPrice) {
+          pricesMap.set(stock.symbol, {
+            symbol: latestPrice.symbol,
+            price: latestPrice.price,
+            change: latestPrice.change,
+            changePercent: latestPrice.changePercent,
+            currency: latestPrice.currency,
+            lastUpdated: new Date(latestPrice.lastUpdated)
+          });
+          console.log(`DBから株価情報を取得: ${stock.symbol}, 価格: ${latestPrice.price}${latestPrice.currency}`);
+        }
+      }
+      
+      // 株価情報をセット
+      setStockPrices(pricesMap);
+      
+      console.log(`DBから株価情報を取得完了: ${pricesMap.size}件`);
+    } catch (error) {
+      console.error('DBからの株価情報取得に失敗しました:', error);
+    }
+  };
 
   // 価格データを非同期で取得する関数
   const fetchPriceData = async (stocksData: Stock[]) => {
