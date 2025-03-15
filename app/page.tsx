@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 import { migrateDataToDefaultPortfolio } from './actions/migrate-portfolio';
 import { formatCurrency, formatJPY, formatNumber } from "@/app/utils/formatCurrency";
 import { formatDate, formatDateLocale, formatDateTimeLocale } from "@/app/utils/formatDate";
-import { calculatePercentage, roundNumber } from "./utils/formatNumber";
+import { calculatePercentage, roundNumber, calculateFundValue, calculateJPYStockValue, calculateUSDStockValue } from "./utils/formatNumber";
 import { FundPrice, fetchMultipleFundPrices } from "@/app/lib/fundApi";
 
 interface Fund {
@@ -86,14 +86,15 @@ export default function Home() {
       const quantity = stock.id !== undefined ? stockQuantities.get(stock.id) || 0 : 0;
 
       if (stock.assetType === 'fund' && fundPrice) {
-        const value = fundPrice.price * quantity / 10000;
+        // 投資信託の評価額計算にユーティリティ関数を使用
+        const value = calculateFundValue(fundPrice.price, quantity);
         // 投資信託は日本株として計算
         japanTotal += value;
         total += value;
       } else if (stockPrice && quantity > 0) {
-        const value = stockPrice.price * quantity;
         if (stockPrice.currency === 'USD') {
-          const valueInJPY = value * exchangeRate.rate;
+          // 米ドル建て株式の評価額計算にユーティリティ関数を使用
+          const valueInJPY = calculateUSDStockValue(stockPrice.price, quantity, exchangeRate.rate);
           // 米国株として計算
           if (stock.country === '米国') {
             usTotal += valueInJPY;
@@ -103,6 +104,8 @@ export default function Home() {
           }
           total += valueInJPY;
         } else {
+          // 日本円建て株式の評価額計算にユーティリティ関数を使用
+          const value = calculateJPYStockValue(stockPrice.price, quantity);
           // 日本円建ての株式は日本株として計算
           if (stock.country === '日本') {
             japanTotal += value;
@@ -116,9 +119,9 @@ export default function Home() {
     });
 
     return {
-      japanTotal: roundNumber(japanTotal),
-      usTotal: roundNumber(usTotal),
-      total: roundNumber(total)
+      japanTotal: japanTotal,
+      usTotal: usTotal,
+      total: japanTotal + usTotal
     };
   };
 
