@@ -4,14 +4,12 @@ import "./globals.css";
 import Link from "next/link";
 import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
+import { APP_VERSION } from './lib/version';
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
-
-// アプリケーションのバージョン情報
-const APP_VERSION = '0.3.0';
 
 export const metadata: Metadata = {
   title: "投資ビジョン - 配当金・株式購入記録アプリ",
