@@ -15,8 +15,11 @@ function calculateValue(
   exchangeRate: { rate: number; lastUpdated: Date },
   quantity: number
 ): { value: number | null; currency: string } {
-  // 株価情報がない場合や数量が0の場合
-  if (!stockPrice || quantity === 0) return { value: null, currency: '円' };
+  // 株価情報がない場合はnullを返す
+  if (!stockPrice) return { value: null, currency: '円' };
+  
+  // 数量が0の場合は0を返す
+  if (quantity === 0) return { value: 0, currency: '円' };
   
   // 投資信託の場合は「口数×現在値/10000」で計算
   if (stock.assetType === 'fund') {
@@ -578,12 +581,15 @@ export default function StocksPage() {
                           // 投資信託の場合
                           <div className="font-bold text-gray-800">
                             {stockPrice ? (
-                              `${calculateValue(
-                                stock, 
-                                stockPrice,
-                                exchangeRate, 
-                                stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
-                              ).value?.toLocaleString()} 円`
+                              (() => {
+                                const value = calculateValue(
+                                  stock, 
+                                  stockPrice,
+                                  exchangeRate, 
+                                  stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
+                                ).value;
+                                return value === null ? '-' : `${value.toLocaleString()} 円`;
+                              })()
                             ) : priceLoading ? (
                               <div className="flex items-center text-gray-500">
                                 <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -601,12 +607,15 @@ export default function StocksPage() {
                           <div className="font-bold text-gray-800">
                             {stockPrice ? (
                               <>
-                                {calculateValue(
-                                  stock, 
-                                  stockPrice,
-                                  exchangeRate, 
-                                  stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
-                                ).value?.toLocaleString()} 円
+                                {(() => {
+                                  const value = calculateValue(
+                                    stock, 
+                                    stockPrice,
+                                    exchangeRate, 
+                                    stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
+                                  ).value;
+                                  return value === null ? '-' : `${value.toLocaleString()} 円`;
+                                })()}
                                 {stockPrice.currency === 'USD' && (
                                   <div className="text-xs text-gray-500">
                                     （為替レート: {exchangeRate.rate.toFixed(2)}円/$）
