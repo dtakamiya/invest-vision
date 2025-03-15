@@ -256,6 +256,8 @@ export default function Home() {
           const prices = await fetchMultipleStockPrices(symbols);
           setStockPrices(prices);
         }
+        
+        // 為替レートの取得（株価取得の後に行う）
         const rate = await fetchUSDJPYRate();
         console.log('TOPページで為替レートを更新しました:', rate);
         setExchangeRate(rate);
@@ -267,8 +269,8 @@ export default function Home() {
     // 初回ロード時にも更新を実行
     updatePrices();
     
-    // 更新間隔を1分に変更（テスト用）
-    const interval = setInterval(updatePrices, 1 * 60 * 1000);
+    // 更新間隔を10分に設定
+    const interval = setInterval(updatePrices, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [stocks]);
