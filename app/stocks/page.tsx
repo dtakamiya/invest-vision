@@ -266,6 +266,7 @@ export default function StocksPage() {
       stocks.forEach(stock => {
         if (stock.assetType === 'fund') {
           fundSymbols.push(stock.symbol);
+          console.log(`投資信託を検出: ${stock.symbol}, ${stock.name}`);
         } else {
           stockSymbols.push(stock.symbol);
         }
@@ -273,17 +274,47 @@ export default function StocksPage() {
       
       console.log('株価更新: 株式と投資信託に分類', { 
         stocks: stockSymbols.length, 
-        funds: fundSymbols.length
+        funds: fundSymbols.length,
+        fundSymbols: fundSymbols.join(', ')
       });
       
       // 全ての銘柄（株式と投資信託）のシンボルを集める
       const allSymbols = [...stockSymbols, ...fundSymbols];
       console.log('全ての銘柄の価格情報更新を開始:', allSymbols);
       
+      // 更新前の投資信託価格を記録
+      const beforeFundPrices = new Map<string, StockPrice>();
+      fundSymbols.forEach(symbol => {
+        const price = stockPrices.get(symbol);
+        if (price) {
+          beforeFundPrices.set(symbol, price);
+          console.log(`更新前の投資信託価格: ${symbol}, 価格: ${price.price}円, 更新日時: ${price.lastUpdated.toISOString()}`);
+        } else {
+          console.log(`更新前の投資信託価格なし: ${symbol}`);
+        }
+      });
+      
       // 全ての銘柄の価格情報を一度に取得
       try {
         const prices = await fetchMultipleStockPrices(allSymbols);
         console.log('全ての銘柄の価格情報更新結果:', prices);
+        
+        // 投資信託の更新結果を確認
+        fundSymbols.forEach(symbol => {
+          const newPrice = prices.get(symbol);
+          if (newPrice) {
+            console.log(`投資信託価格更新成功: ${symbol}, 新価格: ${newPrice.price}円, 更新日時: ${newPrice.lastUpdated.toISOString()}`);
+            const oldPrice = beforeFundPrices.get(symbol);
+            if (oldPrice) {
+              console.log(`投資信託価格比較: ${symbol}, 旧価格: ${oldPrice.price}円, 新価格: ${newPrice.price}円, 差額: ${newPrice.price - oldPrice.price}円`);
+              if (newPrice.lastUpdated.getTime() === oldPrice.lastUpdated.getTime()) {
+                console.warn(`警告: 投資信託の更新日時が変わっていません: ${symbol}`);
+              }
+            }
+          } else {
+            console.warn(`投資信託価格更新失敗: ${symbol}`);
+          }
+        });
         
         // 既存の株価情報と統合
         const updatedPrices = new Map(stockPrices);

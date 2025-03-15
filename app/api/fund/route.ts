@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FundPrice } from '@/app/lib/fundApi';
 
-// キャッシュの有効期限（1時間 = 3600000ミリ秒）
-const CACHE_EXPIRY = 3600000;
+// キャッシュの有効期限（1分 = 60000ミリ秒）
+const CACHE_EXPIRY = 60000;
 
 // メモリ内キャッシュ
 const fundPriceCache = new Map<string, { data: FundPrice, timestamp: number }>();
@@ -127,6 +127,33 @@ export async function GET(request: NextRequest) {
         }
       }
       
+      // パターン5: 2023年以降の新しいパターン
+      if (!price) {
+        priceMatch = html.match(/<span class="[^"]*_3-q9[^"]*">([0-9,]+)<\/span>/);
+        if (priceMatch && priceMatch[1]) {
+          price = parseFloat(priceMatch[1].replace(/,/g, ''));
+          console.log(`パターン5で基準価格を取得: ${price}円`);
+        }
+      }
+      
+      // パターン6: 2023年以降の別パターン
+      if (!price) {
+        priceMatch = html.match(/<span data-test="price-value">([0-9,]+)<\/span>/);
+        if (priceMatch && priceMatch[1]) {
+          price = parseFloat(priceMatch[1].replace(/,/g, ''));
+          console.log(`パターン6で基準価格を取得: ${price}円`);
+        }
+      }
+      
+      // パターン7: 汎用的なパターン（数値+円）
+      if (!price) {
+        priceMatch = html.match(/([0-9,]+)円/);
+        if (priceMatch && priceMatch[1]) {
+          price = parseFloat(priceMatch[1].replace(/,/g, ''));
+          console.log(`パターン7で基準価格を取得: ${price}円`);
+        }
+      }
+      
       // どのパターンでも価格が取得できなかった場合
       if (!price) {
         console.log(`${isin}の基準価格データが見つかりませんでした`);
@@ -153,6 +180,18 @@ export async function GET(request: NextRequest) {
           nameMatch = html.match(/<h2 class="PriceBoardMain__name__[^"]*">(.+?)<\/h2>/);
           if (nameMatch && nameMatch[1]) {
             name = nameMatch[1];
+          } else {
+            // 2023年以降の新しいパターン
+            nameMatch = html.match(/<h1 class="[^"]*">(.+?)<\/h1>/);
+            if (nameMatch && nameMatch[1]) {
+              name = nameMatch[1];
+            } else {
+              // data-test属性を持つ要素を試す
+              nameMatch = html.match(/<h1 data-test="symbol-name">(.+?)<\/h1>/);
+              if (nameMatch && nameMatch[1]) {
+                name = nameMatch[1];
+              }
+            }
           }
         }
       }
@@ -171,6 +210,16 @@ export async function GET(request: NextRequest) {
       if (!dateMatch) {
         // PriceBoardMain__time__2J2Yクラスを持つli要素内のtime要素を試す
         dateMatch = html.match(/<li class="PriceBoardMain__time__[^"]*"><time>(\d{1,2})\/(\d{1,2})<\/time><\/li>/);
+      }
+      
+      if (!dateMatch) {
+        // 2023年以降の新しいパターン
+        dateMatch = html.match(/(\d{1,2})\/(\d{1,2})[^<]*現在/);
+      }
+      
+      if (!dateMatch) {
+        // data-test属性を持つ要素を試す
+        dateMatch = html.match(/<span data-test="quote-time">.*?(\d{1,2})\/(\d{1,2}).*?<\/span>/);
       }
       
       if (dateMatch && dateMatch.length >= 3) {
