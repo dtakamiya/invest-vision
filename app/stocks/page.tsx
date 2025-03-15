@@ -208,46 +208,27 @@ export default function StocksPage() {
         funds: fundSymbols.length
       });
       
-      // 株価情報を取得
-      if (stockSymbols.length > 0) {
-        try {
-          console.log('株価情報の取得を開始:', stockSymbols);
-          const prices = await fetchMultipleStockPrices(stockSymbols);
-          console.log('株価情報取得結果:', prices);
-          
-          // 既存の株価情報と統合
-          const updatedPrices = new Map(stockPrices);
-          prices.forEach((price, symbol) => {
-            updatedPrices.set(symbol, price);
-          });
-          
-          setStockPrices(updatedPrices);
-          console.log(`株価情報取得完了: ${prices.size}件`);
-        } catch (error) {
-          console.error('株価情報の取得中にエラーが発生しました:', error);
-          toast.error('株価情報の取得に失敗しました');
-        }
-      }
+      // 全ての銘柄（株式と投資信託）のシンボルを集める
+      const allSymbols = [...stockSymbols, ...fundSymbols];
+      console.log('全ての銘柄の価格情報取得を開始:', allSymbols);
       
-      // 投資信託も株価情報として取得
-      if (fundSymbols.length > 0) {
-        try {
-          console.log('投資信託価格情報の取得を開始:', fundSymbols);
-          const prices = await fetchMultipleStockPrices(fundSymbols);
-          console.log('投資信託価格情報取得結果:', prices);
-          
-          // 既存の株価情報と統合
-          const updatedPrices = new Map(stockPrices);
-          prices.forEach((price, symbol) => {
-            updatedPrices.set(symbol, price);
-          });
-          
-          setStockPrices(updatedPrices);
-          console.log(`投資信託価格情報取得完了: ${prices.size}件`);
-        } catch (error) {
-          console.error('投資信託価格情報の取得中にエラーが発生しました:', error);
-          toast.error('投資信託価格情報の取得に失敗しました');
-        }
+      // 全ての銘柄の価格情報を一度に取得
+      try {
+        const prices = await fetchMultipleStockPrices(allSymbols);
+        console.log('全ての銘柄の価格情報取得結果:', prices);
+        
+        // 既存の株価情報と統合
+        const updatedPrices = new Map(stockPrices);
+        prices.forEach((price, symbol) => {
+          console.log(`価格情報を更新: ${symbol}, 価格: ${price.price}${price.currency}`);
+          updatedPrices.set(symbol, price);
+        });
+        
+        setStockPrices(updatedPrices);
+        console.log(`価格情報取得完了: ${prices.size}件, 全体: ${updatedPrices.size}件`);
+      } catch (error) {
+        console.error('価格情報の取得中にエラーが発生しました:', error);
+        toast.error('価格情報の取得に失敗しました');
       }
       
       setDataStatus('complete');
@@ -284,45 +265,28 @@ export default function StocksPage() {
         funds: fundSymbols.length
       });
       
-      // 株価情報を取得
-      if (stockSymbols.length > 0) {
-        try {
-          const prices = await fetchMultipleStockPrices(stockSymbols);
-          
-          // 既存の株価情報と統合
-          const updatedPrices = new Map(stockPrices);
-          prices.forEach((price, symbol) => {
-            updatedPrices.set(symbol, price);
-          });
-          
-          setStockPrices(updatedPrices);
-          console.log(`株価情報更新完了: ${prices.size}件`);
-          toast.success('株価情報を更新しました');
-        } catch (error) {
-          console.error('株価情報の更新中にエラーが発生しました:', error);
-          toast.error('株価情報の更新に失敗しました');
-        }
-      }
+      // 全ての銘柄（株式と投資信託）のシンボルを集める
+      const allSymbols = [...stockSymbols, ...fundSymbols];
+      console.log('全ての銘柄の価格情報更新を開始:', allSymbols);
       
-      // 投資信託も株価情報として取得
-      if (fundSymbols.length > 0) {
-        try {
-          console.log('投資信託価格情報の更新を開始:', fundSymbols);
-          const prices = await fetchMultipleStockPrices(fundSymbols);
-          
-          // 既存の株価情報と統合
-          const updatedPrices = new Map(stockPrices);
-          prices.forEach((price, symbol) => {
-            updatedPrices.set(symbol, price);
-          });
-          
-          setStockPrices(updatedPrices);
-          console.log(`投資信託価格情報更新完了: ${prices.size}件`);
-          toast.success('投資信託価格情報を更新しました');
-        } catch (error) {
-          console.error('投資信託価格情報の更新中にエラーが発生しました:', error);
-          toast.error('投資信託価格情報の更新に失敗しました');
-        }
+      // 全ての銘柄の価格情報を一度に取得
+      try {
+        const prices = await fetchMultipleStockPrices(allSymbols);
+        console.log('全ての銘柄の価格情報更新結果:', prices);
+        
+        // 既存の株価情報と統合
+        const updatedPrices = new Map(stockPrices);
+        prices.forEach((price, symbol) => {
+          console.log(`価格情報を更新: ${symbol}, 価格: ${price.price}${price.currency}`);
+          updatedPrices.set(symbol, price);
+        });
+        
+        setStockPrices(updatedPrices);
+        console.log(`価格情報更新完了: ${prices.size}件, 全体: ${updatedPrices.size}件`);
+        toast.success('価格情報を更新しました');
+      } catch (error) {
+        console.error('価格情報の更新中にエラーが発生しました:', error);
+        toast.error('価格情報の更新に失敗しました');
       }
       
       // 為替レートも更新
