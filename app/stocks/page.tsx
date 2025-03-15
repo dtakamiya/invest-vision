@@ -5,7 +5,6 @@ import { dbHelper, Stock, Purchase, Portfolio, StockPriceData } from "@/app/lib/
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchMultipleStockPrices, StockPrice } from "@/app/lib/stockApi";
-import { fetchMultipleFundPrices, FundPrice } from "@/app/lib/fundApi";
 import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
 import { toast } from 'react-hot-toast';
 
@@ -13,19 +12,10 @@ import { toast } from 'react-hot-toast';
 function calculateValue(
   stock: Stock,
   stockPrice: StockPrice | undefined,
-  fundPrice: FundPrice | undefined,
   exchangeRate: { rate: number; lastUpdated: Date },
   quantity: number
 ): { value: number | null; currency: string } {
-  // 投資信託の場合
-  if (stock.assetType === 'fund' && fundPrice) {
-    return {
-      value: Math.round(fundPrice.price * quantity / 10000),
-      currency: '円'
-    };
-  }
-  
-  // 株式の場合
+  // 株価情報がない場合や数量が0の場合
   if (!stockPrice || quantity === 0) return { value: null, currency: '円' };
   
   // USDの場合、為替レートを適用
@@ -45,7 +35,6 @@ function calculateValue(
 export default function StocksPage() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [stockPrices, setStockPrices] = useState<Map<string, StockPrice>>(new Map());
-  const [fundPrices, setFundPrices] = useState<Map<string, FundPrice>>(new Map());
   const [loading, setLoading] = useState(true);
   const [priceLoading, setPriceLoading] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<{ rate: number; lastUpdated: Date }>({ rate: 150, lastUpdated: new Date() });
@@ -144,7 +133,9 @@ export default function StocksPage() {
         await loadPricesFromDB(stocksData);
         
         // 価格データを非同期で取得
+        console.log('fetchBasicData: 価格データの取得を開始します', { stocksCount: stocksData.length });
         fetchPriceData(stocksData);
+        console.log('fetchBasicData: 価格データの取得を開始しました（非同期）');
         
       } catch (error) {
         console.error('株式銘柄の取得に失敗しました:', error);
@@ -190,7 +181,12 @@ export default function StocksPage() {
 
   // 価格データを非同期で取得する関数
   const fetchPriceData = async (stocksData: Stock[]) => {
-    if (stocksData.length === 0) return;
+    console.log('fetchPriceData関数が呼び出されました', { stocksCount: stocksData.length });
+    
+    if (stocksData.length === 0) {
+      console.log('銘柄データが空のため、株価取得をスキップします');
+      return;
+    }
     
     try {
       setPriceLoading(true);
@@ -217,7 +213,15 @@ export default function StocksPage() {
         try {
           console.log('株価情報の取得を開始:', stockSymbols);
           const prices = await fetchMultipleStockPrices(stockSymbols);
-          setStockPrices(prices);
+          console.log('株価情報取得結果:', prices);
+          
+          // 既存の株価情報と統合
+          const updatedPrices = new Map(stockPrices);
+          prices.forEach((price, symbol) => {
+            updatedPrices.set(symbol, price);
+          });
+          
+          setStockPrices(updatedPrices);
           console.log(`株価情報取得完了: ${prices.size}件`);
         } catch (error) {
           console.error('株価情報の取得中にエラーが発生しました:', error);
@@ -225,19 +229,24 @@ export default function StocksPage() {
         }
       }
       
-      // 投資信託基準価格を取得
+      // 投資信託も株価情報として取得
       if (fundSymbols.length > 0) {
         try {
-          console.log('投資信託基準価格の取得を開始:', fundSymbols);
-          const prices = await fetchMultipleFundPrices(fundSymbols);
-          console.log('投資信託基準価格の取得結果:', { 
-            取得成功: prices.size, 
-            取得失敗: fundSymbols.length - prices.size
+          console.log('投資信託価格情報の取得を開始:', fundSymbols);
+          const prices = await fetchMultipleStockPrices(fundSymbols);
+          console.log('投資信託価格情報取得結果:', prices);
+          
+          // 既存の株価情報と統合
+          const updatedPrices = new Map(stockPrices);
+          prices.forEach((price, symbol) => {
+            updatedPrices.set(symbol, price);
           });
-          setFundPrices(prices);
+          
+          setStockPrices(updatedPrices);
+          console.log(`投資信託価格情報取得完了: ${prices.size}件`);
         } catch (error) {
-          console.error('投資信託基準価格の取得中にエラーが発生しました:', error);
-          toast.error('投資信託価格の取得に失敗しました');
+          console.error('投資信託価格情報の取得中にエラーが発生しました:', error);
+          toast.error('投資信託価格情報の取得に失敗しました');
         }
       }
       
@@ -279,7 +288,14 @@ export default function StocksPage() {
       if (stockSymbols.length > 0) {
         try {
           const prices = await fetchMultipleStockPrices(stockSymbols);
-          setStockPrices(prices);
+          
+          // 既存の株価情報と統合
+          const updatedPrices = new Map(stockPrices);
+          prices.forEach((price, symbol) => {
+            updatedPrices.set(symbol, price);
+          });
+          
+          setStockPrices(updatedPrices);
           console.log(`株価情報更新完了: ${prices.size}件`);
           toast.success('株価情報を更新しました');
         } catch (error) {
@@ -288,20 +304,24 @@ export default function StocksPage() {
         }
       }
       
-      // 投資信託基準価格を取得
+      // 投資信託も株価情報として取得
       if (fundSymbols.length > 0) {
         try {
-          console.log('投資信託基準価格の更新を開始:', fundSymbols);
-          const prices = await fetchMultipleFundPrices(fundSymbols);
-          console.log('投資信託基準価格の更新結果:', { 
-            更新成功: prices.size, 
-            更新失敗: fundSymbols.length - prices.size
+          console.log('投資信託価格情報の更新を開始:', fundSymbols);
+          const prices = await fetchMultipleStockPrices(fundSymbols);
+          
+          // 既存の株価情報と統合
+          const updatedPrices = new Map(stockPrices);
+          prices.forEach((price, symbol) => {
+            updatedPrices.set(symbol, price);
           });
-          setFundPrices(prices);
-          toast.success('投資信託価格を更新しました');
+          
+          setStockPrices(updatedPrices);
+          console.log(`投資信託価格情報更新完了: ${prices.size}件`);
+          toast.success('投資信託価格情報を更新しました');
         } catch (error) {
-          console.error('投資信託基準価格の更新中にエラーが発生しました:', error);
-          toast.error('投資信託価格の更新に失敗しました');
+          console.error('投資信託価格情報の更新中にエラーが発生しました:', error);
+          toast.error('投資信託価格情報の更新に失敗しました');
         }
       }
       
@@ -486,7 +506,6 @@ export default function StocksPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {stocks.map((stock: Stock) => {
                   const stockPrice = stockPrices.get(stock.symbol);
-                  const fundPrice = fundPrices.get(stock.symbol);
                   return (
                     <tr key={stock.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -510,13 +529,13 @@ export default function StocksPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {stock.assetType === 'fund' ? (
                           // 投資信託の場合
-                          fundPrices.get(stock.symbol) ? (
+                          stockPrice ? (
                             <div className="space-y-1">
                               <div className="font-bold text-gray-800">
-                                {fundPrices.get(stock.symbol)?.price.toLocaleString()} 円
+                                {stockPrice.price.toLocaleString()} 円
                               </div>
                               <div className="text-xs text-gray-500">
-                                更新: {fundPrices.get(stock.symbol)?.lastUpdated.toLocaleString('ja-JP')}
+                                更新: {stockPrice.lastUpdated.toLocaleString('ja-JP')}
                                 <span className="ml-1 text-green-600 inline-flex items-center">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
@@ -586,11 +605,10 @@ export default function StocksPage() {
                         {stock.assetType === 'fund' ? (
                           // 投資信託の場合
                           <div className="font-bold text-gray-800">
-                            {fundPrices.get(stock.symbol) ? (
+                            {stockPrice ? (
                               `${calculateValue(
                                 stock, 
-                                undefined,
-                                fundPrices.get(stock.symbol),
+                                stockPrice,
                                 exchangeRate, 
                                 stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
                               ).value?.toLocaleString()} 円`
@@ -614,7 +632,6 @@ export default function StocksPage() {
                                 {calculateValue(
                                   stock, 
                                   stockPrice,
-                                  undefined,
                                   exchangeRate, 
                                   stock.id !== undefined ? stockQuantities.get(stock.id as number) || 0 : 0
                                 ).value?.toLocaleString()} 円
