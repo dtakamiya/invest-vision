@@ -1,29 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '../../lib/db';
 
 // このルートは動的であることを明示
 export const dynamic = 'force-dynamic';
 
-interface ExchangeRateCache {
-  rate: number;
-  lastUpdated: Date;
-}
-
-// グローバル変数でキャッシュを管理
-let cachedRate: ExchangeRateCache | null = null;
-let cacheTimestamp: number | null = null;
+// キャッシュ期間（5分）
 const CACHE_DURATION = 5 * 60 * 1000; // 5分
 
 export async function GET(request: NextRequest) {
   try {
-    const now = Date.now();
     const url = new URL(request.url);
     const isManualUpdate = url.searchParams.has('manual');
+    const fromCurrency = 'USD';
+    const toCurrency = 'JPY';
     
-    // キャッシュが有効かチェック（手動更新でない場合のみ）
-    if (!isManualUpdate && cachedRate && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION)) {
-      console.log('キャッシュされた為替レートを使用:', cachedRate);
-      const res = NextResponse.json(cachedRate);
-      return res;
+    // データベースから最新の為替レートを取得
+    const latestRate = await db.exchangeRates.findLatestByCurrencyPair(fromCurrency, toCurrency);
+    
+    // 手動更新でない場合、かつ有効な為替レートがある場合はそれを使用
+    if (!isManualUpdate && latestRate && !db.exchangeRates.isRateExpired(fromCurrency, toCurrency)) {
+      console.log('データベースの為替レートを使用:', latestRate);
+      return NextResponse.json({
+        rate: latestRate.rate,
+        lastUpdated: latestRate.lastUpdated
+      });
     }
 
     console.log('Yahoo Finance APIから為替レートを取得中...');
@@ -56,26 +56,37 @@ export async function GET(request: NextRequest) {
     const rate = data.chart.result[0].meta.regularMarketPrice;
     console.log('取得した為替レート:', rate);
 
-    // 成功したらキャッシュを更新
-    cachedRate = {
+    // データベースに為替レートを保存
+    const now = new Date();
+    await db.exchangeRates.update(fromCurrency, toCurrency, {
       rate,
-      lastUpdated: new Date()
-    };
-    cacheTimestamp = now;
+      lastUpdated: now
+    });
 
-    const res = NextResponse.json(cachedRate);
+    const result = {
+      rate,
+      lastUpdated: now
+    };
+
+    const res = NextResponse.json(result);
     res.headers.set('Cache-Control', 'no-store, must-revalidate');
     res.headers.set('Pragma', 'no-cache');
     res.headers.set('Expires', '0');
     return res;
   } catch (error) {
     console.error('為替レート取得エラー:', error);
-    // エラー時はキャッシュを更新せず、既存のキャッシュがあればそれを使用
-    if (cachedRate) {
-      console.log('エラー発生時、キャッシュされた為替レートを使用:', cachedRate);
-      return NextResponse.json(cachedRate);
+    
+    // エラー時はデータベースの最新レートを使用（期限切れでも）
+    const latestRate = await db.exchangeRates.findLatestByCurrencyPair('USD', 'JPY');
+    if (latestRate) {
+      console.log('エラー発生時、データベースの為替レートを使用:', latestRate);
+      return NextResponse.json({
+        rate: latestRate.rate,
+        lastUpdated: latestRate.lastUpdated
+      });
     }
-    // キャッシュもない場合は固定値を使用
+    
+    // データベースにもない場合は固定値を使用
     return NextResponse.json({
       rate: 150,
       lastUpdated: new Date(),

@@ -88,6 +88,17 @@ export interface StockPriceData {
   updatedAt: Date;
 }
 
+// 為替レート情報
+export interface ExchangeRateData {
+  id?: number;
+  fromCurrency: string;
+  toCurrency: string;
+  rate: number;
+  lastUpdated: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // データベースヘルパーの型定義
 export interface DbOperations<T> {
   findMany(options?: { 
@@ -123,6 +134,12 @@ export interface DbHelper {
     update(id: number, stockPrice: Partial<Omit<StockPriceData, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
     delete(id: number): Promise<void>;
   };
+  exchangeRates: {
+    findLatestByCurrencyPair(fromCurrency: string, toCurrency: string): Promise<ExchangeRateData | null>;
+    add(data: Omit<ExchangeRateData, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExchangeRateData>;
+    update(fromCurrency: string, toCurrency: string, data: { rate: number, lastUpdated: Date }): Promise<ExchangeRateData | null>;
+    isRateExpired(fromCurrency: string, toCurrency: string, expirationMinutes?: number): Promise<boolean>;
+  };
 }
 
 // データのエクスポート・インポート用の型定義
@@ -138,7 +155,7 @@ export interface ExportData {
 
 // データベース名とバージョン
 const DB_NAME = 'investVisionDB';
-const DB_VERSION = 9;  // バージョンを9に更新
+const DB_VERSION = 10;  // バージョンを10に更新
 
 // データベース接続を開く
 export function openDB(): Promise<IDBDatabase> {
@@ -151,7 +168,8 @@ export function openDB(): Promise<IDBDatabase> {
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = (event) => {
-      reject('データベース接続エラー: ' + (event.target as IDBOpenDBRequest).error);
+      console.error('データベースの接続に失敗しました:', event);
+      reject('データベースの接続に失敗しました');
     };
 
     request.onsuccess = (event) => {
@@ -315,6 +333,19 @@ export function openDB(): Promise<IDBDatabase> {
           stockPricesStore.createIndex('stockId', 'stockId', { unique: false });
           stockPricesStore.createIndex('symbol', 'symbol', { unique: false });
           stockPricesStore.createIndex('lastUpdated', 'lastUpdated', { unique: false });
+        }
+      }
+
+      // バージョン10への更新：為替レート情報テーブルを追加
+      if (oldVersion < 10) {
+        // ExchangeRates オブジェクトストアの作成
+        if (!db.objectStoreNames.contains('exchangeRates')) {
+          const exchangeRatesStore = db.createObjectStore('exchangeRates', { keyPath: 'id', autoIncrement: true });
+          exchangeRatesStore.createIndex('fromCurrency', 'fromCurrency', { unique: false });
+          exchangeRatesStore.createIndex('toCurrency', 'toCurrency', { unique: false });
+          exchangeRatesStore.createIndex('lastUpdated', 'lastUpdated', { unique: false });
+          // 通貨ペアのユニークインデックスを作成
+          exchangeRatesStore.createIndex('currencyPair', ['fromCurrency', 'toCurrency'], { unique: true });
         }
       }
     };
@@ -1371,8 +1402,156 @@ export const dbHelper: DbHelper = {
         };
       });
     }
+  },
+  exchangeRates: {
+    async findLatestByCurrencyPair(fromCurrency: string, toCurrency: string): Promise<ExchangeRateData | null> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['exchangeRates'], 'readonly');
+        const store = transaction.objectStore('exchangeRates');
+        const index = store.index('currencyPair');
+        const request = index.getAll([fromCurrency, toCurrency]);
+        
+        request.onsuccess = () => {
+          const results = request.result;
+          if (results.length === 0) {
+            resolve(null);
+            return;
+          }
+          
+          // 最新の為替レート情報を取得
+          const latestRate = results.sort((a, b) => 
+            new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+          )[0];
+          
+          resolve(latestRate);
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      });
+    },
+    
+    async add(data: Omit<ExchangeRateData, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExchangeRateData> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['exchangeRates'], 'readwrite');
+        const store = transaction.objectStore('exchangeRates');
+        
+        // 現在の日時を設定
+        const now = new Date();
+        const exchangeRateData: Omit<ExchangeRateData, 'id'> = {
+          ...data,
+          createdAt: now,
+          updatedAt: now
+        };
+        
+        const request = store.add(exchangeRateData);
+        
+        request.onsuccess = () => {
+          const id = request.result as number;
+          resolve({ ...exchangeRateData, id });
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      });
+    },
+    
+    async update(fromCurrency: string, toCurrency: string, data: { rate: number, lastUpdated: Date }): Promise<ExchangeRateData | null> {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        // まず既存のレコードを検索
+        const findTransaction = db.transaction(['exchangeRates'], 'readonly');
+        const findStore = findTransaction.objectStore('exchangeRates');
+        const index = findStore.index('currencyPair');
+        const findRequest = index.getAll([fromCurrency, toCurrency]);
+        
+        findRequest.onsuccess = async () => {
+          const results = findRequest.result;
+          const now = new Date();
+          
+          if (results.length > 0) {
+            // 既存のレコードがある場合は更新
+            const latestRate = results.sort((a, b) => 
+              new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+            )[0];
+            
+            const updateTransaction = db.transaction(['exchangeRates'], 'readwrite');
+            const updateStore = updateTransaction.objectStore('exchangeRates');
+            
+            const updatedData = {
+              ...latestRate,
+              rate: data.rate,
+              lastUpdated: data.lastUpdated,
+              updatedAt: now
+            };
+            
+            const updateRequest = updateStore.put(updatedData);
+            
+            updateRequest.onsuccess = () => {
+              resolve(updatedData);
+            };
+            
+            updateRequest.onerror = () => {
+              reject(updateRequest.error);
+            };
+            
+            updateTransaction.oncomplete = () => {
+              db.close();
+            };
+          } else {
+            // 既存のレコードがない場合は新規作成
+            try {
+              const newData = await this.add({
+                fromCurrency,
+                toCurrency,
+                rate: data.rate,
+                lastUpdated: data.lastUpdated
+              });
+              resolve(newData);
+            } catch (error) {
+              reject(error);
+            }
+          }
+        };
+        
+        findRequest.onerror = () => {
+          reject(findRequest.error);
+          db.close();
+        };
+      });
+    },
+    
+    async isRateExpired(fromCurrency: string, toCurrency: string, expirationMinutes: number = 5): Promise<boolean> {
+      const latestRate = await this.findLatestByCurrencyPair(fromCurrency, toCurrency);
+      
+      if (!latestRate) {
+        return true; // レートが存在しない場合は期限切れとみなす
+      }
+      
+      const now = new Date();
+      const lastUpdated = new Date(latestRate.lastUpdated);
+      const diffMs = now.getTime() - lastUpdated.getTime();
+      const diffMinutes = diffMs / (1000 * 60);
+      
+      return diffMinutes > expirationMinutes;
+    }
   }
 };
+
+// dbHelperをdbとしてもエクスポート
+export const db = dbHelper;
 
 // データのエクスポート・インポート機能
 export const dataManagement = {
