@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// このルートは動的であることを明示
+export const dynamic = 'force-dynamic';
+
 interface ExchangeRateCache {
   rate: number;
   lastUpdated: Date;
