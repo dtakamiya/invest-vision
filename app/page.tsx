@@ -100,9 +100,9 @@ export default function Home() {
       }, 0);
 
     return {
-      japanTotal: Math.round(japanTotal),
-      usTotal: Math.round(usTotal),
-      total: Math.round(total)
+      japanTotal: Math.round(japanTotal * 10) / 10,
+      usTotal: Math.round(usTotal * 10) / 10,
+      total: Math.round(total * 10) / 10
     };
   };
 
@@ -491,7 +491,7 @@ export default function Home() {
               </div>
               <div className={`bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200 hover:shadow-md transition-all price-update ${updateComplete ? 'price-updated' : ''}`}>
                 <div className="text-lg font-bold text-purple-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0, notation: 'compact' }).format(calculateTotalValueByCountry().total)}
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(calculateTotalValueByCountry().total)}
                   {priceLoading && (
                     <span className="inline-block ml-2">
                       <svg className="animate-spin h-3 w-3 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -631,7 +631,7 @@ export default function Home() {
                 <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow price-update ${updateComplete ? 'price-updated' : ''}`}>
                   <h3 className="text-lg font-medium text-gray-500 mb-2">評価額合計</h3>
                   <p className="text-xl font-bold text-purple-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().total)}
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(calculateTotalValueByCountry().total)}
                     {priceLoading && (
                       <span className="inline-block ml-2">
                         <svg className="animate-spin h-3 w-3 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -646,7 +646,7 @@ export default function Home() {
                 <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow price-update ${updateComplete ? 'price-updated' : ''}`}>
                   <h3 className="text-lg font-medium text-gray-500 mb-2">日本株評価額</h3>
                   <p className="text-xl font-bold text-red-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().japanTotal)}
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(calculateTotalValueByCountry().japanTotal)}
                     {priceLoading && (
                       <span className="inline-block ml-2">
                         <svg className="animate-spin h-3 w-3 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -661,7 +661,7 @@ export default function Home() {
                 <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow price-update ${updateComplete ? 'price-updated' : ''}`}>
                   <h3 className="text-lg font-medium text-gray-500 mb-2">米国株評価額</h3>
                   <p className="text-xl font-bold text-blue-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().usTotal)}
+                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(calculateTotalValueByCountry().usTotal)}
                     {priceLoading && (
                       <span className="inline-block ml-2">
                         <svg className="animate-spin h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

@@ -24,7 +24,7 @@ function calculateValue(
   // 投資信託の場合は「口数×現在値/10000」で計算
   if (stock.assetType === 'fund') {
     return {
-      value: Math.round(stockPrice.price * quantity / 10000),
+      value: Math.round(stockPrice.price * quantity / 10000 * 10) / 10,
       currency: '円'
     };
   }
@@ -32,13 +32,13 @@ function calculateValue(
   // USDの場合、為替レートを適用
   if (stockPrice.currency === 'USD') {
     return {
-      value: Math.round(stockPrice.price * quantity * exchangeRate.rate),
+      value: Math.round(stockPrice.price * quantity * exchangeRate.rate * 10) / 10,
       currency: '円'
     };
   }
   
   return {
-    value: Math.round(stockPrice.price * quantity),
+    value: Math.round(stockPrice.price * quantity * 10) / 10,
     currency: '円'
   };
 }
