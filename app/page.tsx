@@ -703,7 +703,7 @@ export default function Home() {
                             <span className={`text-lg font-bold ${targetColor}`}>{targetCountry}</span>
                           </div>
                           <p className="text-xl font-bold text-green-600">
-                            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(difference)}
+                            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(difference)}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
                             ※売却せず追加購入のみの提案です

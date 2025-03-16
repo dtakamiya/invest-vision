@@ -120,6 +120,27 @@ function calculateValue(
   };
 }
 
+// リバランス提案を計算する関数
+function calculateRebalanceSuggestion(
+  stocks: Stock[],
+  stockPrices: Map<string, StockPrice>,
+  stockQuantities: Map<number, number>,
+  exchangeRate: { rate: number; lastUpdated: Date }
+) {
+  const { japanTotal, usTotal } = calculateTotalValueByCountry(stocks, stockPrices, stockQuantities, exchangeRate);
+  
+  // 日本株と米国株の評価額の差を計算
+  const difference = Math.abs(japanTotal - usTotal);
+  
+  // どちらを追加購入すべきかを判断
+  const targetCountry = japanTotal < usTotal ? '日本株' : '米国株';
+  
+  return {
+    difference,
+    targetCountry
+  };
+}
+
 describe('calculateTotalValueByCountry', () => {
   test('日本株の評価額が少数第一位まで丸められる', () => {
     // テスト用のデータを準備
@@ -325,5 +346,133 @@ describe('calculateValue', () => {
     
     // 結果を検証
     expect(result.value).toBe(0);
+  });
+});
+
+describe('calculateRebalanceSuggestion', () => {
+  // 浮動小数点数の比較用ヘルパー関数
+  const expectNumberToBeCloseTo = (actual: number, expected: number) => {
+    const tolerance = 0.000001; // 許容誤差
+    expect(Math.abs(actual - expected)).toBeLessThan(tolerance);
+  };
+
+  test('日本株が少ない場合のテスト', () => {
+    // テスト用のデータを準備
+    const stocks: Stock[] = [
+      { id: 1, symbol: '7203.T', name: 'トヨタ自動車', country: '日本', assetType: 'stock' } as Stock,
+      { id: 2, symbol: 'AAPL', name: 'Apple Inc.', country: '米国', assetType: 'stock' } as Stock
+    ];
+    
+    const stockPrices = new Map<string, StockPrice>();
+    stockPrices.set('7203.T', {
+      symbol: '7203.T',
+      price: 2500.3,
+      change: 50,
+      changePercent: 2,
+      currency: 'JPY',
+      lastUpdated: new Date()
+    });
+    
+    stockPrices.set('AAPL', {
+      symbol: 'AAPL',
+      price: 180.7,
+      change: 2,
+      changePercent: 1,
+      currency: 'USD',
+      lastUpdated: new Date()
+    });
+    
+    const stockQuantities = new Map<number, number>();
+    stockQuantities.set(1, 100); // トヨタ: 2500.3 * 100 = 250030
+    stockQuantities.set(2, 20);  // Apple: 180.7 * 20 * 150.3 = 543184.2
+    
+    const exchangeRate = { rate: 150.3, lastUpdated: new Date() };
+    
+    // 関数を実行
+    const result = calculateRebalanceSuggestion(stocks, stockPrices, stockQuantities, exchangeRate);
+    
+    // 結果を検証
+    expect(result.targetCountry).toBe('日本株');
+    expectNumberToBeCloseTo(result.difference, 293154.2); // 543184.2 - 250030 = 293154.2
+  });
+
+  test('米国株が少ない場合のテスト', () => {
+    // テスト用のデータを準備
+    const stocks: Stock[] = [
+      { id: 1, symbol: '7203.T', name: 'トヨタ自動車', country: '日本', assetType: 'stock' } as Stock,
+      { id: 2, symbol: 'AAPL', name: 'Apple Inc.', country: '米国', assetType: 'stock' } as Stock
+    ];
+    
+    const stockPrices = new Map<string, StockPrice>();
+    stockPrices.set('7203.T', {
+      symbol: '7203.T',
+      price: 2500.3,
+      change: 50,
+      changePercent: 2,
+      currency: 'JPY',
+      lastUpdated: new Date()
+    });
+    
+    stockPrices.set('AAPL', {
+      symbol: 'AAPL',
+      price: 180.7,
+      change: 2,
+      changePercent: 1,
+      currency: 'USD',
+      lastUpdated: new Date()
+    });
+    
+    const stockQuantities = new Map<number, number>();
+    stockQuantities.set(1, 200); // トヨタ: 2500.3 * 200 = 500060
+    stockQuantities.set(2, 10);  // Apple: 180.7 * 10 * 150.3 = 271592.1
+    
+    const exchangeRate = { rate: 150.3, lastUpdated: new Date() };
+    
+    // 関数を実行
+    const result = calculateRebalanceSuggestion(stocks, stockPrices, stockQuantities, exchangeRate);
+    
+    // 結果を検証
+    expect(result.targetCountry).toBe('米国株');
+    expectNumberToBeCloseTo(result.difference, 228467.9); // 500060 - 271592.1 = 228467.9
+  });
+
+  test('差額が少数を含む場合のテスト', () => {
+    // テスト用のデータを準備
+    const stocks: Stock[] = [
+      { id: 1, symbol: '7203.T', name: 'トヨタ自動車', country: '日本', assetType: 'stock' } as Stock,
+      { id: 2, symbol: 'AAPL', name: 'Apple Inc.', country: '米国', assetType: 'stock' } as Stock
+    ];
+    
+    const stockPrices = new Map<string, StockPrice>();
+    stockPrices.set('7203.T', {
+      symbol: '7203.T',
+      price: 2500.3,
+      change: 50,
+      changePercent: 2,
+      currency: 'JPY',
+      lastUpdated: new Date()
+    });
+    
+    stockPrices.set('AAPL', {
+      symbol: 'AAPL',
+      price: 180.7,
+      change: 2,
+      changePercent: 1,
+      currency: 'USD',
+      lastUpdated: new Date()
+    });
+    
+    const stockQuantities = new Map<number, number>();
+    stockQuantities.set(1, 150); // トヨタ: 2500.3 * 150 = 375045
+    stockQuantities.set(2, 15);  // Apple: 180.7 * 15 * 150.3 = 407388.15
+    
+    const exchangeRate = { rate: 150.3, lastUpdated: new Date() };
+    
+    // 関数を実行
+    const result = calculateRebalanceSuggestion(stocks, stockPrices, stockQuantities, exchangeRate);
+    
+    // 結果を検証
+    expect(result.targetCountry).toBe('日本株');
+    expectNumberToBeCloseTo(result.difference, 32343.2); // 407388.15 - 375045 = 32343.15, 小数第一位まで
   });
 }); 
