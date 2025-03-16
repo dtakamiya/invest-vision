@@ -10,6 +10,7 @@ export interface StockPrice {
   changePercent: number;
   currency: string;
   lastUpdated: Date;
+  name?: string;  // 銘柄名または投資信託名
 }
 
 /**
@@ -146,7 +147,8 @@ async function fetchFundPriceAsStockPrice(symbol: string): Promise<StockPrice | 
       change: 0, // 前日比は取得できないため0とする
       changePercent: 0, // 変化率も0とする
       currency: data.currency || 'JPY',
-      lastUpdated: new Date(data.lastUpdated)
+      lastUpdated: new Date(data.lastUpdated),
+      name: data.name  // 投資信託名を追加
     };
     
     // 株価情報をDBに保存
@@ -181,6 +183,20 @@ async function saveStockPriceToDB(stockPrice: StockPrice): Promise<void> {
     
     // 最新の株価情報を取得
     const latestPrice = await dbHelper.stockPrices.findLatestByStockId(stock.id);
+    
+    // 名前の更新処理
+    if (stockPrice.name && stock.name !== stockPrice.name) {
+      if (stock.assetType === 'fund') {
+        console.log(`投資信託名を更新します: ${stock.name} -> ${stockPrice.name}`);
+      } else {
+        console.log(`株式名を更新します: ${stock.name} -> ${stockPrice.name}`);
+      }
+      // 常に最新の名前で更新する
+      await dbHelper.stocks.update({ 
+        where: { id: stock.id }, 
+        data: { name: stockPrice.name } 
+      });
+    }
     
     if (latestPrice) {
       // 既存のレコードがある場合は更新
