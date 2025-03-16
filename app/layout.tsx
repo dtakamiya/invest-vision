@@ -3,8 +3,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import { Toaster } from 'react-hot-toast';
-import Header from './components/Header';
+import { NavHeader } from './components/NavHeader';
 import { APP_VERSION } from './lib/version';
+import { AnimationStyles } from './components/animation-styles';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,7 +25,8 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={`${inter.variable} antialiased bg-gray-50 min-h-screen flex flex-col`}>
-        <Header />
+        <AnimationStyles />
+        <NavHeader />
         <main className="container mx-auto px-4 py-6 sm:px-6 lg:px-8 flex-grow">
           {children}
         </main>
