@@ -461,49 +461,49 @@ export default function StocksPage() {
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32"
                   >
-                    銘柄コード
+                    シンボル
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-64"
                   >
                     銘柄名
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24"
                   >
                     投資国
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24"
                   >
-                    資産タイプ
+                    種別
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-48"
                   >
                     現在値
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-48"
                   >
                     評価額
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-32"
                   >
-                    所有数
+                    保有数
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-32"
                   >
                     操作
                   </th>
@@ -514,13 +514,15 @@ export default function StocksPage() {
                   const stockPrice = stockPrices.get(stock.symbol);
                   return (
                     <tr key={stock.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         <span className="text-sm font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded">
                           {stock.symbol}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                        {stock.name}
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-800 break-words whitespace-pre-wrap max-w-xs">
+                          {stock.name}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className={`px-2 py-1 rounded ${stock.country === '日本' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
