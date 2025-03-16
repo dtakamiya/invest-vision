@@ -88,7 +88,8 @@ export async function fetchStockPrice(symbol: string): Promise<StockPrice | null
       change: change,
       changePercent: changePercent,
       currency: meta.currency || 'JPY',
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
+      name: data.stockName || meta.shortName // 銘柄名を追加
     };
     
     // 株価情報をDBに保存

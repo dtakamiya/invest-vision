@@ -172,20 +172,25 @@ export async function GET(request: NextRequest) {
         currency: data.chart.result[0].meta.currency,
         regularMarketPrice: data.chart.result[0].meta.regularMarketPrice,
         previousClose: data.chart.result[0].meta.previousClose,
-        exchangeName: data.chart.result[0].meta.exchangeName
+        exchangeName: data.chart.result[0].meta.exchangeName,
+        shortName: data.chart.result[0].meta.shortName
       } : 'データなし',
       cacheHit: false
     });
     
     // キャッシュを更新
     stockCache.set(cacheKey, {
-      data,
+      data: {
+        ...data,
+        stockName: data.chart?.result?.[0]?.meta?.shortName
+      },
       timestamp: now
     });
     
     // キャッシュ情報を追加
     const responseData = {
       ...data,
+      stockName: data.chart?.result?.[0]?.meta?.shortName,
       _cacheInfo: {
         hit: false,
         timestamp: new Date(now).toISOString(),
