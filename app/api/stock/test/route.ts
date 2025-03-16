@@ -89,7 +89,8 @@ export async function GET(request: NextRequest) {
         previousClose: data.chart.result[0].meta.previousClose,
         exchangeName: data.chart.result[0].meta.exchangeName,
         timezone: data.chart.result[0].meta.timezone,
-        exchangeTimezoneName: data.chart.result[0].meta.exchangeTimezoneName
+        exchangeTimezoneName: data.chart.result[0].meta.exchangeTimezoneName,
+        longName: data.chart.result[0].meta.longName
       } : 'データなし',
       dataPoints: data.chart?.result?.[0]?.timestamp?.length || 0
     });

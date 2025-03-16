@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
         regularMarketPrice: data.chart.result[0].meta.regularMarketPrice,
         previousClose: data.chart.result[0].meta.previousClose,
         exchangeName: data.chart.result[0].meta.exchangeName,
-        shortName: data.chart.result[0].meta.shortName
+        longName: data.chart.result[0].meta.longName
       } : 'データなし',
       cacheHit: false
     });
@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
     stockCache.set(cacheKey, {
       data: {
         ...data,
-        stockName: data.chart?.result?.[0]?.meta?.shortName
+        stockName: data.chart?.result?.[0]?.meta?.longName
       },
       timestamp: now
     });
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
     // キャッシュ情報を追加
     const responseData = {
       ...data,
-      stockName: data.chart?.result?.[0]?.meta?.shortName,
+      stockName: data.chart?.result?.[0]?.meta?.longName,
       _cacheInfo: {
         hit: false,
         timestamp: new Date(now).toISOString(),
