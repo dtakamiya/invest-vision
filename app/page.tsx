@@ -511,13 +511,13 @@ export default function Home() {
               </div>
               <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 hover:shadow-md transition-all">
                 <div className="text-lg font-bold text-green-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0, notation: 'compact' }).format(totalInvestment)}
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(totalInvestment)}
                 </div>
                 <div className="text-green-600 font-medium">投資総額</div>
               </div>
               <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200 hover:shadow-md transition-all">
                 <div className="text-lg font-bold text-amber-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0, notation: 'compact' }).format(totalDividends)}
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(totalDividends)}
                 </div>
                 <div className="text-amber-600 font-medium">配当金合計</div>
                 {totalInvestment > 0 && (
@@ -826,7 +826,7 @@ export default function Home() {
               <div className="glass p-6 rounded-xl hover-lift">
                 <h3 className="text-lg font-medium text-gray-500 mb-2">投資総額</h3>
                 <p className="text-xl font-bold text-green-600">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalInvestment)}
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(totalInvestment)}
                 </p>
                 <div className="mt-4">
                   <Link
@@ -845,7 +845,7 @@ export default function Home() {
               <div className="glass p-6 rounded-xl hover-lift">
                 <h3 className="text-lg font-medium text-gray-500 mb-2">配当金合計</h3>
                 <p className="text-xl font-bold text-amber-600">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalDividends)}
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(totalDividends)}
                 </p>
                 <div className="mt-4">
                   <Link
