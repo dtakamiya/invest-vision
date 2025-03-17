@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { openDB, dbHelper, Stock, Purchase, Portfolio } from "@/app/lib/db";
 import { StockPrice, fetchMultipleStockPrices } from "@/app/lib/stockApi";
-import { fetchUSDJPYRate } from "@/app/lib/exchangeApi";
 import { toast } from 'react-hot-toast';
+import { useExchangeRate } from "@/app/hooks/useExchangeRate";
+import { ExchangeRateDisplay } from "@/app/components/ExchangeRateDisplay";
 
 interface Fund {
   id: number;
@@ -21,13 +22,23 @@ export default function Home() {
   const [totalDividends, setTotalDividends] = useState(0);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [stockPrices, setStockPrices] = useState<Map<string, StockPrice>>(new Map());
-  const [exchangeRate, setExchangeRate] = useState<{ rate: number; lastUpdated: Date }>({ rate: 150, lastUpdated: new Date() });
   const [stockQuantities, setStockQuantities] = useState<Map<number, number>>(new Map());
-  const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
   const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
   const [currentPortfolioId, setCurrentPortfolioId] = useState<number | null>(null);
   const [priceLoading, setPriceLoading] = useState(true);
-  const [updateComplete, setUpdateComplete] = useState(false); // 更新完了を示す状態変数
+  
+  // 為替レート関連の状態はカスタムフックに移動
+  const { 
+    exchangeRate, 
+    exchangeRateLoading, 
+    updateExchangeRate,
+    updateComplete
+  } = useExchangeRate();
+  
+  // 手動で為替レートを更新する関数
+  const updateExchangeRateManually = () => {
+    updateExchangeRate(true); // trueを渡してトースト表示を有効にする
+  };
 
   // 投資国ごとの評価額を計算する関数
   const calculateTotalValueByCountry = () => {
@@ -120,34 +131,6 @@ export default function Home() {
       difference,
       targetCountry
     };
-  };
-
-  // 為替レートを手動で更新する関数
-  const updateExchangeRateManually = async () => {
-    try {
-      setExchangeRateLoading(true);
-      
-      // Server Actionを呼び出し
-      const { updateExchangeRateManually } = await import('@/app/actions/exchange-rate');
-      const result = await updateExchangeRateManually();
-      
-      if (result.success && result.rate) {
-        setExchangeRate({
-          rate: result.rate,
-          lastUpdated: result.lastUpdated instanceof Date 
-            ? result.lastUpdated 
-            : new Date() // lastUpdatedがDateでない場合は現在時刻を使用
-        });
-        toast.success('為替レートを更新しました');
-      } else {
-        toast.error(result.error || '為替レートの更新に失敗しました');
-      }
-    } catch (error) {
-      console.error('為替レートの更新に失敗しました:', error);
-      toast.error('為替レートの更新に失敗しました');
-    } finally {
-      setExchangeRateLoading(false);
-    }
   };
 
   // IndexedDBの初期化
@@ -280,67 +263,47 @@ export default function Home() {
     }
   };
 
-  // 株価と為替レートを非同期で取得する関数
+  // 株価と保有量のデータを取得する関数
   const fetchPriceData = async (stocksData: Stock[]) => {
     try {
       setPriceLoading(true);
-      setUpdateComplete(false); // 更新開始時にリセット
       
-      // 株価情報の更新が必要かチェック
-      let shouldUpdatePrices = false;
-      
-      // 株価情報の最終更新時刻を確認
-      if (stockPrices.size > 0) {
-        // 最も古い株価情報の更新時刻を取得
-        const oldestUpdate = Array.from(stockPrices.values()).reduce((oldest, price) => {
-          return price.lastUpdated < oldest ? price.lastUpdated : oldest;
-        }, new Date());
-        
-        // 5分以上経過しているかチェック
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        shouldUpdatePrices = oldestUpdate < fiveMinutesAgo;
-        
-        console.log('株価情報の更新チェック:', {
-          oldestUpdate,
-          fiveMinutesAgo,
-          shouldUpdate: shouldUpdatePrices
-        });
-      } else {
-        // 株価情報がない場合は更新が必要
-        shouldUpdatePrices = true;
+      if (stocksData.length === 0) {
+        setPriceLoading(false);
+        return;
       }
       
-      // 株価情報の更新が必要な場合のみAPIリクエストを実行
-      if (shouldUpdatePrices && stocksData.length > 0) {
-        console.log('株価情報の更新を開始します');
-        const symbols = stocksData.map(stock => stock.symbol);
-        const prices = await fetchMultipleStockPrices(symbols);
-        
-        // 既存の株価情報と統合
-        const updatedPrices = new Map(stockPrices);
-        prices.forEach((price, symbol) => {
-          console.log(`価格情報を更新: ${symbol}, 価格: ${price.price}${price.currency}`);
-          updatedPrices.set(symbol, price);
-        });
-        
-        setStockPrices(updatedPrices);
-        console.log(`株価情報取得完了: ${prices.size}件, 全体: ${updatedPrices.size}件`);
-      } else {
-        console.log('株価情報は最新のため、更新をスキップします');
-      }
+      console.log('株価情報取得を開始します');
       
-      // 為替レートの取得（株価取得の後に行う）
-      const rate = await fetchUSDJPYRate();
-      console.log('TOPページで為替レートを更新しました:', rate);
-      setExchangeRate(rate);
+      // 株式と投資信託に分ける
+      const stockSymbols: string[] = [];
+      const fundSymbols: string[] = [];
       
-      // 更新完了のアニメーションを表示
-      setUpdateComplete(true);
+      stocksData.forEach(stock => {
+        if (stock.assetType === 'fund') {
+          fundSymbols.push(stock.symbol);
+        } else {
+          stockSymbols.push(stock.symbol);
+        }
+      });
       
-      // 3秒後にアニメーションを非表示
-      setTimeout(() => {
-        setUpdateComplete(false);
-      }, 3000);
+      console.log('株価取得: 株式と投資信託に分類', { 
+        stocks: stockSymbols.length, 
+        funds: fundSymbols.length
+      });
+      
+      // シンボルの配列を作成
+      const symbols = stocksData.map(stock => stock.symbol);
+      console.log('株価取得: 取得するシンボル一覧', symbols);
+      
+      // 株価情報を取得
+      const prices = await fetchMultipleStockPrices(symbols);
+      
+      // 株価情報を設定
+      setStockPrices(prices);
+      console.log(`株価情報取得完了: ${prices.size}件`);
+      
+      // 注：為替レート更新はカスタムフックで自動的に行われるため、ここでは省略
     } catch (error) {
       console.error('価格情報の取得に失敗しました:', error);
     } finally {
@@ -348,12 +311,11 @@ export default function Home() {
     }
   };
 
-  // 10分おきに為替レートと株価を更新
+  // 10分おきに株価情報を更新するuseEffect
+  // 注：為替レート更新はカスタムフックに移行したためここでは株価情報の更新のみ行う
   useEffect(() => {
     const updatePrices = async () => {
       try {
-        setUpdateComplete(false); // 更新開始時にリセット
-        
         // 株価情報の更新が必要かチェック
         let shouldUpdatePrices = false;
         
@@ -397,24 +359,11 @@ export default function Home() {
           console.log('定期更新: 株価情報は最新のため、更新をスキップします');
         }
         
-        // 為替レートの取得（株価取得の後に行う）
-        const rate = await fetchUSDJPYRate();
-        console.log('TOPページで為替レートを更新しました:', rate);
-        setExchangeRate(rate);
-        
-        // 更新完了のアニメーションを表示
-        setUpdateComplete(true);
-        
-        // 3秒後にアニメーションを非表示
-        setTimeout(() => {
-          setUpdateComplete(false);
-        }, 3000);
+        // 注：為替レート更新はカスタムフックで自動的に行われるため、ここでは省略
       } catch (error) {
         console.error('価格情報の更新に失敗しました:', error);
       }
     };
-
-    // 初回ロード時には更新を実行しない（fetchPriceDataで行うため）
     
     // 更新間隔を10分に設定
     const interval = setInterval(updatePrices, 10 * 60 * 1000);
@@ -602,24 +551,13 @@ export default function Home() {
                             minute: '2-digit'
                           })}
                         </div>
-                        <button 
-                          onClick={updateExchangeRateManually}
-                          disabled={exchangeRateLoading}
-                          className="ml-2 p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors flex items-center disabled:opacity-50"
-                          title="為替レートを手動更新"
-                        >
-                          {exchangeRateLoading ? (
-                            <svg className="animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                            </svg>
-                          )}
-                          <span className="text-xs">手動更新</span>
-                        </button>
+                        <ExchangeRateDisplay
+                          exchangeRate={exchangeRate}
+                          loading={exchangeRateLoading}
+                          onRefresh={updateExchangeRateManually}
+                          updateComplete={updateComplete}
+                          showUpdateTime={false}
+                        />
                       </div>
                     </div>
                   </div>
