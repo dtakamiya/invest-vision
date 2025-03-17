@@ -433,7 +433,7 @@ export default function Home() {
             </div>
             
             {/* 概要カード - ヒーローセクションから移動 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 p-6">
               <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-xl border border-indigo-200 hover:shadow-md transition-all">
                 <div className="text-2xl font-bold text-indigo-700">{stocks.length}</div>
                 <div className="text-indigo-600 font-medium">登録銘柄数</div>
@@ -457,6 +457,20 @@ export default function Home() {
                     <span className="ml-1">（評価額÷投資総額）</span>
                   </div>
                 )}
+              </div>
+              <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-4 rounded-xl border border-teal-200 hover:shadow-md transition-all">
+                <div className="text-lg font-bold text-teal-700">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds - totalInvestment + totalDividends)}
+                </div>
+                <div className="text-teal-600 font-medium">投資可能額</div>
+                <div className="flex items-center mt-1 text-xs text-teal-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  投資資金 - 投資総額 + 配当金
+                </div>
               </div>
               <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 hover:shadow-md transition-all">
                 <div className="text-lg font-bold text-green-700">
@@ -726,7 +740,7 @@ export default function Home() {
 
           <section className="py-6">
             <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">投資概要</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="glass p-6 rounded-xl hover-lift">
                 <h3 className="text-lg font-medium text-gray-500 mb-2">投資資金</h3>
                 <p className="text-xl font-bold text-blue-600">
@@ -743,21 +757,6 @@ export default function Home() {
                       <polyline points="12 5 19 12 12 19"></polyline>
                     </svg>
                   </Link>
-                </div>
-              </div>
-              
-              <div className="glass p-6 rounded-xl hover-lift">
-                <h3 className="text-lg font-medium text-gray-500 mb-2">投資可能額</h3>
-                <p className="text-xl font-bold text-teal-600">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds - totalInvestment + totalDividends)}
-                </p>
-                <div className="flex items-center mt-2 text-sm text-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                  </svg>
-                  投資資金 - 投資総額 + 配当金
                 </div>
               </div>
               
