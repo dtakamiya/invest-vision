@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Stock, StockPrice, InvestmentFund, CountryTotals } from '../types';
+import { Stock } from '@/app/lib/db/types';
+import { StockPrice } from '@/app/lib/stockApi';
+import { InvestmentFund } from '@/app/lib/db/types';
 import { 
   calculateTotalValueByCountry,
   calculateRebalanceSuggestion,
   calculateInvestmentReturn,
   formatCurrency,
   formatPercent
-} from '../utils/calculations';
+} from '@/app/utils/calculations';
 
 interface PortfolioSummaryProps {
   loadingPrices: boolean;
@@ -40,7 +42,7 @@ export default function PortfolioSummary({
   const [updatingRate, setUpdatingRate] = useState(false);
 
   // 登録されている株式数
-  const registeredStocksCount = stocks.filter(stock => !stock.isDeleted).length;
+  const registeredStocksCount = stocks.length;
   
   // 株価が取得できている株式数
   const stocksWithPricesCount = Array.from(stockPrices.keys()).length;
