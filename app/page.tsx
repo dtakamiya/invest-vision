@@ -654,18 +654,20 @@ export default function Home() {
                             <span className="text-sm text-gray-600">追加購入推奨：</span>
                             <span className={`text-lg font-bold ${targetColor}`}>{targetCountry}</span>
                           </div>
-                          <p className="text-xl font-bold text-green-600">
-                            {new Intl.NumberFormat('ja-JP', { 
-                              style: 'currency', 
-                              currency: 'JPY',
-                              minimumFractionDigits: 1,
-                              maximumFractionDigits: 1,
-                              notation: 'compact' 
-                            }).format(difference)}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            ※売却せず追加購入のみの提案です
-                          </p>
+                          <div className="bg-white p-3 rounded-lg shadow-sm border border-green-200">
+                            <p className="text-2xl font-bold text-green-600">
+                              {new Intl.NumberFormat('ja-JP', { 
+                                style: 'currency', 
+                                currency: 'JPY',
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1,
+                                notation: 'compact' 
+                              }).format(difference)}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              ※売却せず追加購入のみの提案です
+                            </p>
+                          </div>
                         </div>
                         <div className="mt-4 md:mt-0 text-sm text-gray-600 bg-white p-3 rounded-lg shadow-sm">
                           <div className="flex justify-between mb-1">
