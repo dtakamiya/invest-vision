@@ -107,7 +107,8 @@ export const formatCurrency = (amount: number, currency: 'JPY' | 'USD' = 'JPY') 
     style: 'currency', 
     currency: currency, 
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
+    currencyDisplay: 'narrowSymbol'
   }).format(amount);
 };
 

@@ -51,7 +51,8 @@ const RebalanceSuggestion = ({ suggestion, loading }: { suggestion: { difference
                     currency: 'JPY',
                     minimumFractionDigits: 1,
                     maximumFractionDigits: 1,
-                    notation: 'compact' 
+                    notation: 'compact',
+                    currencyDisplay: 'narrowSymbol'
                   }).format(suggestion.difference)}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
@@ -465,7 +466,13 @@ export default function Home() {
               </div>
               <div className={`bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200 hover:shadow-md transition-all price-update ${updateComplete ? 'price-updated' : ''}`}>
                 <div className="text-lg font-bold text-purple-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(calculateTotalValueByCountry().total)}
+                  {new Intl.NumberFormat('ja-JP', { 
+                    style: 'currency', 
+                    currency: 'JPY', 
+                    maximumFractionDigits: 1, 
+                    notation: 'compact',
+                    currencyDisplay: 'narrowSymbol'
+                  }).format(calculateTotalValueByCountry().total)}
                   {priceLoading && (
                     <span className="inline-block ml-2">
                       <svg className="animate-spin h-3 w-3 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -499,13 +506,27 @@ export default function Home() {
               </div>
               <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 hover:shadow-md transition-all">
                 <div className="text-lg font-bold text-green-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(totalInvestment)}
+                  {new Intl.NumberFormat('ja-JP', { 
+                    style: 'currency', 
+                    currency: 'JPY', 
+                    minimumFractionDigits: 1, 
+                    maximumFractionDigits: 1, 
+                    notation: 'compact',
+                    currencyDisplay: 'narrowSymbol'
+                  }).format(totalInvestment)}
                 </div>
                 <div className="text-green-600 font-medium">投資総額</div>
               </div>
               <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200 hover:shadow-md transition-all">
                 <div className="text-lg font-bold text-amber-700">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(totalDividends)}
+                  {new Intl.NumberFormat('ja-JP', { 
+                    style: 'currency', 
+                    currency: 'JPY', 
+                    minimumFractionDigits: 1, 
+                    maximumFractionDigits: 1, 
+                    notation: 'compact',
+                    currencyDisplay: 'narrowSymbol'
+                  }).format(totalDividends)}
                 </div>
                 <div className="text-amber-600 font-medium">配当金合計</div>
                 {totalInvestment > 0 && (
@@ -608,7 +629,13 @@ export default function Home() {
                 <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow price-update ${updateComplete ? 'price-updated' : ''}`}>
                   <h3 className="text-lg font-medium text-gray-500 mb-2">評価額合計</h3>
                   <p className="text-xl font-bold text-purple-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(calculateTotalValueByCountry().total)}
+                    {new Intl.NumberFormat('ja-JP', { 
+                      style: 'currency', 
+                      currency: 'JPY', 
+                      maximumFractionDigits: 1, 
+                      notation: 'compact',
+                      currencyDisplay: 'narrowSymbol'
+                    }).format(calculateTotalValueByCountry().total)}
                     {priceLoading && (
                       <span className="inline-block ml-2">
                         <svg className="animate-spin h-3 w-3 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -623,7 +650,13 @@ export default function Home() {
                 <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow price-update ${updateComplete ? 'price-updated' : ''}`}>
                   <h3 className="text-lg font-medium text-gray-500 mb-2">日本株評価額</h3>
                   <p className="text-xl font-bold text-red-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(calculateTotalValueByCountry().japanTotal)}
+                    {new Intl.NumberFormat('ja-JP', { 
+                      style: 'currency', 
+                      currency: 'JPY', 
+                      maximumFractionDigits: 1, 
+                      notation: 'compact',
+                      currencyDisplay: 'narrowSymbol'
+                    }).format(calculateTotalValueByCountry().japanTotal)}
                     {priceLoading && (
                       <span className="inline-block ml-2">
                         <svg className="animate-spin h-3 w-3 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -638,7 +671,13 @@ export default function Home() {
                 <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow price-update ${updateComplete ? 'price-updated' : ''}`}>
                   <h3 className="text-lg font-medium text-gray-500 mb-2">米国株評価額</h3>
                   <p className="text-xl font-bold text-blue-600">
-                    {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 1, notation: 'compact' }).format(calculateTotalValueByCountry().usTotal)}
+                    {new Intl.NumberFormat('ja-JP', { 
+                      style: 'currency', 
+                      currency: 'JPY', 
+                      maximumFractionDigits: 1, 
+                      notation: 'compact',
+                      currencyDisplay: 'narrowSymbol'
+                    }).format(calculateTotalValueByCountry().usTotal)}
                     {priceLoading && (
                       <span className="inline-block ml-2">
                         <svg className="animate-spin h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -686,7 +725,8 @@ export default function Home() {
                                 currency: 'JPY',
                                 minimumFractionDigits: 1,
                                 maximumFractionDigits: 1,
-                                notation: 'compact' 
+                                notation: 'compact',
+                                currencyDisplay: 'narrowSymbol'
                               }).format(difference)}
                             </p>
                             <p className="text-xs text-gray-500 mt-1">

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
@@ -15,7 +15,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "投資ビジョン - 配当金・株式購入記録アプリ",
   description: "配当金の受け取りと株式購入を記録・管理するアプリケーション",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

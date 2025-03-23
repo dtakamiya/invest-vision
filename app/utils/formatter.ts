@@ -21,11 +21,23 @@ export function formatDate(date: Date): string {
  */
 export function formatPrice(price: number, currency: string = 'JPY'): string {
   if (currency === 'JPY') {
-    return price.toLocaleString('ja-JP') + '円';
+    return new Intl.NumberFormat('ja-JP', { 
+      style: 'currency',
+      currency: 'JPY',
+      currencyDisplay: 'narrowSymbol'
+    }).format(price);
   } else if (currency === 'USD') {
-    return '$' + price.toLocaleString('en-US');
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency',
+      currency: 'USD',
+      currencyDisplay: 'narrowSymbol'
+    }).format(price);
   } else {
-    return price.toLocaleString() + ' ' + currency;
+    return new Intl.NumberFormat('ja-JP', { 
+      style: 'currency',
+      currency,
+      currencyDisplay: 'narrowSymbol'
+    }).format(price);
   }
 }
 

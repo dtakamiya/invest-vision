@@ -114,7 +114,13 @@ export default function PortfolioSummary({
         <div className="bg-gray-50 p-4 rounded shadow-sm">
           <h3 className="text-sm font-medium text-gray-500">総投資額</h3>
           <p className="text-2xl font-bold">
-            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(totalInvestment)}
+            {new Intl.NumberFormat('ja-JP', { 
+              style: 'currency', 
+              currency: 'JPY', 
+              minimumFractionDigits: 1, 
+              maximumFractionDigits: 1,
+              currencyDisplay: 'narrowSymbol'
+            }).format(totalInvestment)}
           </p>
           <p className="text-xs text-gray-500">投資信託を含む</p>
         </div>
@@ -122,10 +128,22 @@ export default function PortfolioSummary({
         <div className="bg-gray-50 p-4 rounded shadow-sm">
           <h3 className="text-sm font-medium text-gray-500">総資産額</h3>
           <p className="text-2xl font-bold">
-            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(totalValue)}
+            {new Intl.NumberFormat('ja-JP', { 
+              style: 'currency', 
+              currency: 'JPY', 
+              minimumFractionDigits: 1, 
+              maximumFractionDigits: 1,
+              currencyDisplay: 'narrowSymbol'
+            }).format(totalValue)}
           </p>
           <p className={`text-xs ${investmentReturn >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {formatPercent(investmentReturn)} ({new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(totalValue - totalInvestment)})
+            {formatPercent(investmentReturn)} ({new Intl.NumberFormat('ja-JP', { 
+              style: 'currency', 
+              currency: 'JPY', 
+              minimumFractionDigits: 1, 
+              maximumFractionDigits: 1,
+              currencyDisplay: 'narrowSymbol'
+            }).format(totalValue - totalInvestment)})
           </p>
         </div>
         
@@ -144,7 +162,13 @@ export default function PortfolioSummary({
         <div className="bg-gray-50 p-4 rounded shadow-sm">
           <h3 className="text-lg font-semibold mb-2">日本株投資額</h3>
           <p className="text-2xl font-bold mb-1">
-            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(totalsByCountry.japan)}
+            {new Intl.NumberFormat('ja-JP', { 
+              style: 'currency', 
+              currency: 'JPY', 
+              minimumFractionDigits: 1, 
+              maximumFractionDigits: 1,
+              currencyDisplay: 'narrowSymbol'
+            }).format(totalsByCountry.japan)}
           </p>
           <p className="text-sm text-gray-600">
             割合: {formatPercent(rebalanceSuggestion.jpPercent)}
@@ -154,7 +178,13 @@ export default function PortfolioSummary({
         <div className="bg-gray-50 p-4 rounded shadow-sm">
           <h3 className="text-lg font-semibold mb-2">米国株投資額(円換算)</h3>
           <p className="text-2xl font-bold mb-1">
-            {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(totalsByCountry.us)}
+            {new Intl.NumberFormat('ja-JP', { 
+              style: 'currency', 
+              currency: 'JPY', 
+              minimumFractionDigits: 1, 
+              maximumFractionDigits: 1,
+              currencyDisplay: 'narrowSymbol'
+            }).format(totalsByCountry.us)}
           </p>
           <p className="text-sm text-gray-600">
             割合: {formatPercent(rebalanceSuggestion.usPercent)}
