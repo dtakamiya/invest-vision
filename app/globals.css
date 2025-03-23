@@ -86,6 +86,21 @@
   animation: fadeIn 0.3s ease-out;
 }
 
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.01);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* モダンなスクロールバースタイル */
 ::-webkit-scrollbar {
   width: 8px;
