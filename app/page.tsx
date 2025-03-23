@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { openDB, dbHelper, Stock, Purchase, Portfolio } from "@/app/lib/db";
 import { StockPrice, fetchMultipleStockPrices } from "@/app/lib/stockApi";
 import { toast } from 'react-hot-toast';
@@ -14,6 +14,69 @@ interface Fund {
   date: Date;
   notes?: string;
 }
+
+// リバランス提案用のコンポーネント
+const RebalanceSuggestion = ({ suggestion, loading }: { suggestion: { difference: number, targetCountry: string }, loading: boolean }) => {
+  const targetColor = suggestion.targetCountry === '日本株' ? 'text-red-600' : 'text-blue-600';
+  
+  return (
+    <section className="py-4">
+      <div className={`bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden ${loading ? 'animate-pulse' : ''}`}>
+        <div className="bg-gradient-to-r from-green-600 to-emerald-700 px-6 py-3">
+          <h2 className="text-2xl font-bold text-white flex items-center">
+            リバランス提案
+            {loading && (
+              <span className="inline-flex ml-2">
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </span>
+            )}
+          </h2>
+          <p className="text-green-100 text-sm">最適な資産配分のための提案です</p>
+        </div>
+        
+        <div className="px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="mb-2">
+                <span className="text-sm text-gray-600">追加購入推奨：</span>
+                <span className={`text-lg font-bold ${targetColor}`}>{suggestion.targetCountry}</span>
+              </div>
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg shadow-sm border border-green-200 animate-pulse-slow">
+                <p className="text-2xl font-bold text-green-600">
+                  {new Intl.NumberFormat('ja-JP', { 
+                    style: 'currency', 
+                    currency: 'JPY',
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                    notation: 'compact' 
+                  }).format(suggestion.difference)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  ※売却せず追加購入のみで最適化する提案です
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-center">
+              <Link
+                href="/stocks"
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z" clipRule="evenodd" />
+                </svg>
+                銘柄一覧を見る
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -372,51 +435,13 @@ export default function Home() {
   }, [stocks, stockPrices]);
 
   return (
-    <div className="flex flex-col gap-12 animate-fadeIn">
-      {/* ヒーローセクション */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
-        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-20"></div>
-        <div className="relative z-10 px-8 py-12 md:px-12 md:py-20">
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-              InvestVision
-            </h1>
-            {currentPortfolio && (
-              <p className="mb-6 text-xl font-medium text-indigo-100">
-                {currentPortfolio.name}
-              </p>
-            )}
-            <p className="mb-10 text-lg text-indigo-100">
-              あなたの投資を可視化し、より良い投資判断をサポートします
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link
-                href="/stocks"
-                className="btn px-6 py-3 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:translate-y-[-2px]"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                </svg>
-                銘柄一覧を見る
-              </Link>
-              <Link
-                href="/stocks/new"
-                className="btn px-6 py-3 bg-purple-500 text-white hover:bg-purple-600 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:translate-y-[-2px]"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                新しい銘柄を追加
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="flex flex-col gap-6 sm:gap-12 animate-fadeIn">
+      {/* リバランス提案セクション（最上部に配置） */}
+      <RebalanceSuggestion suggestion={calculateRebalanceSuggestion()} loading={priceLoading} />
 
       {/* ポートフォリオ概要セクション - 強調表示 */}
       {!loading && (
-        <section className="py-6 -mt-6">
+        <section className="py-6">
           <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
             <div className="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-4">
               <h2 className="text-3xl font-bold text-white">ポートフォリオ概要</h2>
@@ -699,247 +724,56 @@ export default function Home() {
                 href="/stocks"
                 className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
               >
-                銘柄詳細を見る
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z" clipRule="evenodd" />
                 </svg>
+                全銘柄一覧を見る
               </Link>
             </div>
           </div>
         </section>
       )}
 
-      {/* 投資概要セクション */}
-      {!loading && (
-        <>
-          {/* ポートフォリオ情報 */}
-          {currentPortfolio && (
-            <section className="py-4">
-              <div className="glass p-8 rounded-xl hover-lift">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                  <div>
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">{currentPortfolio.name}</h2>
-                    {currentPortfolio.description && (
-                      <p className="text-gray-600 mt-1">{currentPortfolio.description}</p>
-                    )}
-                  </div>
-                  <div className="mt-4 md:mt-0">
-                    <Link
-                      href="/portfolios"
-                      className="inline-flex items-center px-4 py-2 neumorphic hover-scale text-indigo-700 rounded-lg transition-all"
-                    >
-                      ポートフォリオを変更
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M6 9l6 6 6-6"/>
-                      </svg>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
-          <section className="py-6">
-            <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">投資概要</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="glass p-6 rounded-xl hover-lift">
-                <h3 className="text-lg font-medium text-gray-500 mb-2">投資資金</h3>
-                <p className="text-xl font-bold text-blue-600">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(totalFunds)}
-                </p>
-                <div className="mt-4">
-                  <Link
-                    href="/funds"
-                    className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors flex items-center hover-scale"
-                  >
-                    詳細を見る
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                      <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-              
-              <div className="glass p-6 rounded-xl hover-lift">
-                <h3 className="text-lg font-medium text-gray-500 mb-2">投資総額</h3>
-                <p className="text-xl font-bold text-green-600">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(totalInvestment)}
-                </p>
-                <div className="mt-4">
-                  <Link
-                    href="/purchases"
-                    className="text-green-600 text-sm font-medium hover:text-green-800 transition-colors flex items-center hover-scale"
-                  >
-                    詳細を見る
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                      <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-              
-              <div className="glass p-6 rounded-xl hover-lift">
-                <h3 className="text-lg font-medium text-gray-500 mb-2">配当金合計</h3>
-                <p className="text-xl font-bold text-amber-600">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(totalDividends)}
-                </p>
-                <div className="mt-4">
-                  <Link
-                    href="/dividends"
-                    className="text-amber-600 text-sm font-medium hover:text-amber-800 transition-colors flex items-center hover-scale"
-                  >
-                    詳細を見る
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                      <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-              
-              <div className="glass p-6 rounded-xl hover-lift">
-                <h3 className="text-lg font-medium text-gray-500 mb-2">投資利回り</h3>
-                <p className="text-xl font-bold text-purple-600">
-                  {totalInvestment > 0 
-                    ? `${((totalDividends / totalInvestment) * 100).toFixed(2)}%` 
-                    : '0.00%'}
-                </p>
-                <div className="flex items-center mt-2 text-sm text-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                  </svg>
-                  配当金 ÷ 投資総額
-                </div>
-              </div>
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* 機能紹介セクション */}
-      <section className="py-8">
-        <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">主な機能</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="glass p-8 rounded-xl card-3d">
-            <div className="card-3d-content">
-              <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6 hover-scale">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-                  <path d="M12 18V6" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-3">投資資金管理</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                投資に使用する資金を管理します。入金と出金を記録して、投資可能な資金を把握できます。
+      {/* ヒーローセクション */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
+        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-20"></div>
+        <div className="relative z-10 px-4 sm:px-8 py-8 sm:py-12 md:px-12 md:py-16">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="mb-3 sm:mb-4 text-3xl sm:text-4xl font-bold tracking-tight md:text-5xl">
+              InvestVision
+            </h1>
+            {currentPortfolio && (
+              <p className="mb-4 sm:mb-6 text-lg sm:text-xl font-medium text-indigo-100">
+                {currentPortfolio.name}
               </p>
-              <Link
-                href="/funds"
-                className="inline-flex items-center text-blue-600 font-medium hover:text-blue-800 transition-colors hover-scale"
-              >
-                投資資金へ
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              </Link>
-            </div>
-          </div>
-
-          <div className="glass p-8 rounded-xl card-3d">
-            <div className="card-3d-content">
-              <div className="w-14 h-14 bg-indigo-100 rounded-lg flex items-center justify-center mb-6 hover-scale">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-3">銘柄管理</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                保有している株式銘柄を簡単に管理できます。銘柄コードや名前を登録して、購入記録や配当金記録と紐づけます。
-              </p>
+            )}
+            <p className="mb-6 sm:mb-10 text-base sm:text-lg text-indigo-100">
+              あなたの投資を可視化し、より良い投資判断をサポートします
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
               <Link
                 href="/stocks"
-                className="inline-flex items-center text-indigo-600 font-medium hover:text-indigo-800 transition-colors hover-scale"
+                className="btn px-4 sm:px-6 py-2 sm:py-3 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:translate-y-[-2px] text-sm sm:text-base"
               >
-                銘柄一覧へ
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
                 </svg>
+                銘柄一覧を見る
               </Link>
-            </div>
-          </div>
-
-          <div className="glass p-8 rounded-xl card-3d">
-            <div className="card-3d-content">
-              <div className="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center mb-6 hover-scale">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                  <rect x="9" y="3" width="6" height="4" rx="2" />
-                  <path d="M9 14l2 2 4-4" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-3">購入記録</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                株式の購入記録を管理します。購入日、数量、価格、手数料などを記録して、投資履歴を把握できます。
-              </p>
               <Link
-                href="/purchases"
-                className="inline-flex items-center text-green-600 font-medium hover:text-green-800 transition-colors hover-scale"
+                href="/stocks/new"
+                className="btn px-4 sm:px-6 py-2 sm:py-3 bg-purple-500 text-white hover:bg-purple-600 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all hover:translate-y-[-2px] text-sm sm:text-base"
               >
-                購入記録へ
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
                 </svg>
-              </Link>
-            </div>
-          </div>
-
-          <div className="glass p-8 rounded-xl card-3d">
-            <div className="card-3d-content">
-              <div className="w-14 h-14 bg-amber-100 rounded-lg flex items-center justify-center mb-6 hover-scale">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-                  <path d="M12 18V6" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-3">配当金記録</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                受け取った配当金を記録します。受取日、金額、税額などを記録して、配当収入を管理できます。
-              </p>
-              <Link
-                href="/dividends"
-                className="inline-flex items-center text-amber-600 font-medium hover:text-amber-800 transition-colors hover-scale"
-              >
-                配当金記録へ
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
+                新しい銘柄を追加
               </Link>
             </div>
           </div>
         </div>
       </section>
-
-      {/* 更新完了通知を表示するコンポーネントを追加 */}
-      {updateComplete && (
-        <div className="fixed bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-lg animate-slideIn z-50">
-          <div className="flex items-center">
-            <svg className="h-6 w-6 mr-2 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <p>株価情報が更新されました</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
