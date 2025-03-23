@@ -15,6 +15,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "投資ビジョン - 配当金・株式購入記録アプリ",
   description: "配当金の受け取りと株式購入を記録・管理するアプリケーション",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
@@ -23,17 +24,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <body className={`${inter.variable} antialiased bg-gray-50 min-h-screen flex flex-col`}>
+    <html lang="ja" className="overflow-x-hidden">
+      <body className={`${inter.variable} antialiased bg-gray-50 min-h-screen flex flex-col overflow-x-hidden`}>
         <AnimationStyles />
         <NavHeader />
-        <main className="container mx-auto px-4 py-6 sm:px-6 lg:px-8 flex-grow">
+        <main className="container mx-auto px-3 py-4 sm:px-6 lg:px-8 flex-grow">
           {children}
         </main>
         <Toaster position="top-right" />
-        <footer className="glass-dark text-gray-300 py-10 mt-auto">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <footer className="glass-dark text-gray-300 py-6 sm:py-10 mt-auto">
+          <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
               <div className="hover-lift">
                 <h3 className="text-xl font-semibold mb-4 bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">投資ビジョン</h3>
                 <p className="text-sm text-gray-400">
@@ -86,7 +87,7 @@ export default function RootLayout({
                 </p>
               </div>
             </div>
-            <div className="border-t border-gray-700 mt-8 pt-6 text-center text-sm">
+            <div className="border-t border-gray-700 mt-6 sm:mt-8 pt-4 sm:pt-6 text-center text-sm">
               <p>© {new Date().getFullYear()} 投資ビジョン - 配当金・株式購入記録アプリ</p>
               <p className="mt-2 text-gray-400 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">

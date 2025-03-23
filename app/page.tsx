@@ -536,15 +536,15 @@ export default function Home() {
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-red-500 rounded-sm"></div>
-                      <span className="text-gray-700">日本株 ({Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
-                      <span className="ml-2 font-semibold text-gray-900">
+                      <span className="text-sm text-gray-700">日本株 ({Math.round((calculateTotalValueByCountry().japanTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
+                      <span className="ml-auto font-semibold text-sm text-gray-900">
                         {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().japanTotal)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-blue-500 rounded-sm"></div>
-                      <span className="text-gray-700">米国株 ({Math.round((calculateTotalValueByCountry().usTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
-                      <span className="ml-2 font-semibold text-gray-900">
+                      <span className="text-sm text-gray-700">米国株 ({Math.round((calculateTotalValueByCountry().usTotal / calculateTotalValueByCountry().total) * 100)}%)</span>
+                      <span className="ml-auto font-semibold text-sm text-gray-900">
                         {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', notation: 'compact' }).format(calculateTotalValueByCountry().usTotal)}
                       </span>
                     </div>
