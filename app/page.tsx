@@ -550,6 +550,20 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
                       <span className="text-sm font-medium text-gray-900">米国株</span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        (1USD = ¥{new Intl.NumberFormat('ja-JP', { 
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(exchangeRate.rate)})
+                      </span>
+                      <span className="text-xs text-gray-400 ml-2">
+                        {exchangeRate.lastUpdated.toLocaleString('ja-JP', {
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })} 時点
+                      </span>
                     </div>
                     <span className="text-sm font-bold text-gray-900">
                       {((calculateTotalValueByCountry().usTotal / calculateTotalValueByCountry().total) * 100).toFixed(1)}%
